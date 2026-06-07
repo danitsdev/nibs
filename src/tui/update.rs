@@ -108,19 +108,7 @@ fn handle_home_keys(
                         "Space: toggle option │ O: run optimization │ Esc: back".to_string();
                 }
                 2 => {
-                    // Uninstall
-                    state.status_message =
-                        "Loading system applications. Please wait...".to_string();
-                    let _ = terminal.draw(|f| crate::tui::view::draw(state, f));
-                    state.installed_apps = crate::uninstall::apps::discover_installed_apps();
-                    state.selected_app_idx = 0;
-                    state.screen = TuiScreen::AppUninstallSelector;
-                    state.status_message =
-                        "Select an app. Enter: inspect leftovers │ C: clean all remnants"
-                            .to_string();
-                }
-                3 => {
-                    // Analyze (integrated disk tree browser!)
+                    // Analyze Disk
                     state.status_message =
                         "Scanning directory structure. Please wait...".to_string();
                     let _ = terminal.draw(|f| crate::tui::view::draw(state, f));
@@ -134,6 +122,18 @@ fn handle_home_keys(
                     state.analyze_show_confirmation = false;
                     state.screen = TuiScreen::Analyze;
                     state.status_message = "Use arrows/jk to navigate │ Enter: Open │ Backspace/u: Up │ d: Trash │ Esc: Back".to_string();
+                }
+                3 => {
+                    // Apps & Leftovers
+                    state.status_message =
+                        "Loading system applications. Please wait...".to_string();
+                    let _ = terminal.draw(|f| crate::tui::view::draw(state, f));
+                    state.installed_apps = crate::uninstall::apps::discover_installed_apps();
+                    state.selected_app_idx = 0;
+                    state.screen = TuiScreen::AppUninstallSelector;
+                    state.status_message =
+                        "Select an app. Enter: inspect leftovers │ C: clean all remnants"
+                            .to_string();
                 }
                 4 => {
                     // Status (integrated status telemetry dashboard!)

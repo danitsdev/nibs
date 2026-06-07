@@ -110,7 +110,7 @@ pub struct TuiState {
     pub is_home_mode: bool,
 
     // Home screen & Sub-modules TUI state
-    pub home_selected_idx: usize, // Selected index in the Home menu (0: Clean, 1: Optimize, 2: Uninstall, 3: Analyze, 4: Status, 5: Clean Trash, 6: Exit)
+    pub home_selected_idx: usize, // Selected index in the Home menu (0: Smart Clean, 1: Deep Clean, 2: Analyze Disk, 3: Apps & Leftovers, 4: Optimize System, 5: Trash, 6: Settings, 7: Exit)
     pub input_buffer: String,
     pub app_name: String,
     pub app_remnants: Vec<(PathBuf, u64)>, // Path and size of remnants

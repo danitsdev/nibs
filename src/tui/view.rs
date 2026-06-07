@@ -701,33 +701,27 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
 
     let menu_items = [
         (
-            "Clean Developer Junk",
-            "Scan projects, target files, and caches to recover space",
+            "Smart Clean",
+            "Find safe junk across apps, system, packages, projects and trash",
+        ),
+        (
+            "Deep Clean",
+            "Review large caches, old downloads, Docker, games and unused data",
+        ),
+        (
+            "Analyze Disk",
+            "Walk through folders and find what is eating your space",
+        ),
+        (
+            "Apps & Leftovers",
+            "Find large apps, unused apps and orphaned config/cache",
         ),
         (
             "Optimize System",
-            "Purge memory cache, vacuum journal logs, optimize logs",
+            "Startup, logs, package cache and safe performance fixes",
         ),
-        (
-            "Smart App Uninstaller",
-            "Scan and trash application binaries, configs, and remnants",
-        ),
-        (
-            "File Space Analyzer",
-            "Explore directory space visualizer (ncdu / gdu style)",
-        ),
-        (
-            "Live System Status",
-            "Monitor OS, uptime, CPU, RAM, disk usage, and network rates",
-        ),
-        (
-            "Clean Trash",
-            "Empty ~/.local/share/Trash after a confirmation prompt",
-        ),
-        (
-            "Settings & Preferences",
-            "Configure cleanup method (Trash vs Direct delete) and UI theme",
-        ),
+        ("Trash", "Review, restore or empty files moved by Nibs"),
+        ("Settings", "Safety mode, cleanup method and recipes"),
         (
             "Exit Nibble",
             "Return to your terminal with a friendly goodbye",
@@ -770,7 +764,7 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
 
     // Right Panel: Disk snapshot and cleanup defaults
     let stats_block = Block::default()
-        .title(" Disk & Trash ")
+        .title(" Today ")
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::DarkGray));
@@ -867,20 +861,20 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
     // --- RENDER FOOTER HELP ---
     let footer_text = Line::from(vec![
         Span::styled(
-            " ↑/↓ or j/k ",
+            " ↑/↓ ",
             Style::default().fg(primary).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("Navigate Menu │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled("Navigate │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Enter ",
             Style::default().fg(primary).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("Open App │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled("Open │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
-            " Q / Esc ",
+            " Q/Esc ",
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("Quit Nibble ", Style::default().fg(Color::DarkGray)),
+        Span::styled("Quit ", Style::default().fg(Color::DarkGray)),
     ]);
     let footer_block = Block::default()
         .borders(Borders::TOP)
