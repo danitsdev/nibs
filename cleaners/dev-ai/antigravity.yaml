@@ -1,0 +1,42 @@
+id: antigravity
+name: Antigravity
+category: dev_ai_agent
+platforms: [linux]
+running: ["antigravity"]
+items:
+  - id: electron-cache
+    name: Antigravity app cache
+    category: desktop_app_cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.config/Antigravity/Cache"
+      - "**/.config/Antigravity/Code Cache"
+      - "**/.config/Antigravity/GPUCache"
+      - "**/.cache/Antigravity"
+      - "**/.cache/antigravity"
+    reason: "Antigravity's Electron-style cache stores temporary UI assets, compiled code cache, and GPU cache. Cleaning it does not remove projects or user settings."
+    kept:
+      - "settings"
+      - "auth state"
+      - "workspace state"
+      - "project files"
+
+  - id: workspace-state
+    name: Antigravity workspace state
+    risk: review
+    safety_class: user_data
+    default_action: review
+    block_if_running: true
+    paths:
+      - "**/.config/Antigravity/IndexedDB"
+      - "**/.config/Antigravity/Local Storage"
+      - "**/.config/Antigravity/Session Storage"
+      - "**/.config/Antigravity/blob_storage"
+    reason: "Workspace storage may contain sessions, local application state, indexes, or account-linked data. Review it instead of cleaning automatically."
+    kept:
+      - "auth state"
+      - "settings"
+      - "project files"

@@ -1,0 +1,48 @@
+id: chromium-family
+name: Chromium browsers
+category: browser_cache
+platforms: [linux]
+running: ["chrome", "chromium", "brave", "msedge"]
+items:
+  - id: web-cache
+    name: Chromium browser web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.cache/google-chrome/*/Cache"
+      - "**/.cache/google-chrome/*/GPUCache"
+      - "**/.cache/chromium/*/Cache"
+      - "**/.cache/chromium/*/GPUCache"
+      - "**/.cache/BraveSoftware/Brave-Browser/*/Cache"
+      - "**/.cache/BraveSoftware/Brave-Browser/*/GPUCache"
+      - "**/.config/google-chrome/*/Code Cache"
+      - "**/.config/chromium/*/Code Cache"
+      - "**/.config/BraveSoftware/Brave-Browser/*/Code Cache"
+    reason: "Chromium-family browser cache stores temporary web assets, compiled JavaScript cache, and GPU cache. Cleaning it does not remove passwords, cookies, history, bookmarks, extensions, or browser preferences."
+    kept:
+      - "saved passwords"
+      - "cookies and active logins"
+      - "browsing history"
+      - "bookmarks"
+      - "extensions and preferences"
+
+  - id: profile-data
+    name: Chromium browser profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/google-chrome/*/Login Data"
+      - "**/.config/google-chrome/*/Cookies"
+      - "**/.config/google-chrome/*/History"
+      - "**/.config/chromium/*/Login Data"
+      - "**/.config/chromium/*/Cookies"
+      - "**/.config/chromium/*/History"
+      - "**/.config/BraveSoftware/Brave-Browser/*/Login Data"
+      - "**/.config/BraveSoftware/Brave-Browser/*/Cookies"
+      - "**/.config/BraveSoftware/Brave-Browser/*/History"
+    reason: "Chromium profile databases can contain credentials, cookies, history, and account-linked state. Nibble only reports them as protected data."
+    kept:
+      - "all browser identity, history, and preference data"

@@ -1,0 +1,23 @@
+id: discord
+name: Discord
+category: desktop_app_cache
+platforms: [linux]
+running: ["discord"]
+items:
+  - id: app-cache
+    name: Discord app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.config/discord/Cache"
+      - "**/.config/discord/Code Cache"
+      - "**/.config/discord/GPUCache"
+      - "**/.var/app/com.discordapp.Discord/cache"
+    reason: "Discord cache stores temporary media previews, avatars, compiled UI cache, and GPU cache. Cleaning it does not remove your servers, messages, settings, or login state."
+    kept:
+      - "login state"
+      - "server list and messages"
+      - "settings"
+      - "downloads outside Discord cache"

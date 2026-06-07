@@ -1,0 +1,37 @@
+id: spotify
+name: Spotify
+category: desktop_app_cache
+platforms: [linux]
+running: ["spotify"]
+items:
+  - id: web-ui-cache
+    name: Spotify UI cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.cache/spotify/Browser"
+      - "**/.cache/spotify/Code Cache"
+      - "**/.cache/spotify/GPUCache"
+    reason: "Spotify UI cache stores temporary web UI assets and GPU cache. Cleaning it does not remove your account, playlists, preferences, or local music files."
+    kept:
+      - "login state"
+      - "playlists and library"
+      - "preferences"
+      - "local files"
+
+  - id: offline-media-cache
+    name: Spotify offline media cache
+    risk: review
+    safety_class: user_data
+    default_action: review
+    block_if_running: true
+    paths:
+      - "**/.cache/spotify/Storage"
+      - "**/.cache/spotify/Data"
+    reason: "Spotify media cache may include downloaded offline songs and large audio data. Cleaning it can free space, but offline content may need to be downloaded again."
+    kept:
+      - "account"
+      - "playlists"
+      - "preferences"

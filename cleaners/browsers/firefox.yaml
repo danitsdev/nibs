@@ -1,0 +1,52 @@
+id: firefox
+name: Firefox
+category: browser_cache
+platforms: [linux]
+running: ["firefox", "firefox-esr"]
+items:
+  - id: web-cache
+    name: Firefox web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.cache/mozilla/firefox/*/cache2"
+      - "**/.cache/mozilla/firefox/*/startupCache"
+      - "**/.cache/mozilla/firefox/*/thumbnails"
+    reason: "Firefox web cache contains cached web assets, generated thumbnails, and startup cache files. Cleaning it does not remove saved passwords, cookies, history, bookmarks, extensions, or preferences."
+    kept:
+      - "saved passwords"
+      - "cookies and active logins"
+      - "browsing history"
+      - "bookmarks"
+      - "extensions and preferences"
+
+  - id: crash-reports
+    name: Firefox completed crash reports
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.mozilla/firefox/Crash Reports/submitted"
+      - "**/.mozilla/firefox/Crash Reports/pending"
+    reason: "Completed or pending crash reports are diagnostic artifacts. Cleaning them does not change browser profile data."
+    kept:
+      - "profile settings"
+      - "passwords"
+      - "cookies"
+
+  - id: profile-data
+    name: Firefox profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.mozilla/firefox/*/logins.json"
+      - "**/.mozilla/firefox/*/key4.db"
+      - "**/.mozilla/firefox/*/cookies.sqlite"
+      - "**/.mozilla/firefox/*/places.sqlite"
+      - "**/.mozilla/firefox/*/prefs.js"
+    reason: "Firefox profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibble must not clean these by default."
+    kept:
+      - "all browser identity, history, and preference data"

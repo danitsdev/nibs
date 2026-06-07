@@ -1,0 +1,128 @@
+- id: linux_trash
+  name: FreeDesktop Trash
+  category: trash
+  risk: safe
+  patterns:
+    - "**/.local/share/Trash"
+  reason: "This directory contains files you deleted using your desktop file explorer. Deleting this will permanently discard these recycled files and free up disk space."
+  default_action: clean
+
+- id: codex_workspaces
+  name: Codex workspaces
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/.cache/codex-update-manager/workspaces"
+  reason: "This directory contains temporary build workspaces used during Codex updates. Deleting this is completely safe: it only contains scratch directories and does not affect your active apps or configurations."
+  default_action: clean
+
+- id: codex_downloads
+  name: Codex downloads cache
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/.cache/codex-update-manager/downloads"
+  reason: "This folder stores downloaded package updates and tarballs. Deleting this is safe: Codex will download any required update package again on demand."
+  default_action: clean
+
+- id: codex_runtimes
+  name: Codex runtime caches
+  category: language_cache
+  risk: review
+  patterns:
+    - "**/.cache/codex-runtimes"
+  reason: "This directory stores compiled runtime binaries. Deleting this is safe, though your Codex desktop environment will need to fetch or compile runtimes again when started next time."
+  default_action: review
+
+- id: ms_playwright_go
+  name: Playwright Go browser binaries
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.cache/ms-playwright-go"
+  reason: "This directory contains headless browser distributions (Chromium, Firefox, WebKit) downloaded by the Playwright end-to-end testing library. Deleting this is safe: running tests next time will automatically re-download them."
+  default_action: clean
+
+- id: tmp_dir
+  name: System temporary directory
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/tmp"
+  reason: "This directory holds temporary files created by currently running system processes. Deleting this is safe (inactive files only) and standard on Linux system reboots."
+  default_action: clean
+
+- id: var_tmp_dir
+  name: Variable temporary directory
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/var/tmp"
+  reason: "This directory holds temporary files that are designed to survive reboots. Deleting this is safe: it only cleans up stagnant temporary variables."
+  default_action: clean
+
+- id: apt_cache
+  name: APT package manager cache
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/var/cache/apt/archives"
+  reason: "This directory stores downloaded package files (.deb archives) for APT package installations. Deleting this is completely safe: it does not affect currently installed software. APT will download packages again from repositories if you reinstall or rebuild them."
+  default_action: review
+
+- id: dnf_cache
+  name: DNF/YUM package manager cache
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/var/cache/dnf"
+    - "**/var/cache/yum"
+  reason: "This folder contains cached package metadata, metadata indexes, and downloaded RPM files. Deleting this is safe: package managers will rebuild the cache on the next run. Note: The first query or update search after cleanup will take longer because it needs to re-download metadata indexes."
+  default_action: review
+
+- id: pacman_cache
+  name: Pacman package manager cache
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/var/cache/pacman/pkg"
+  reason: "This directory stores downloaded Arch Linux packages (.pkg.tar.zst files) to allow package rollbacks. Deleting this is safe: installed software is untouched, but you will lose offline cached archives for manual downgrades unless they are downloaded again."
+  default_action: review
+
+- id: systemd_journal
+  name: Systemd journal log archives
+  category: temporary_file
+  risk: review
+  patterns:
+    - "**/var/log/journal"
+    - "**/run/log/journal"
+  reason: "This directory holds the systemd binary event logs (journald logs). Deleting or vacuuming historical logs is safe: it keeps current/active runtime logs while removing archived logs that have accumulated over time."
+  default_action: review
+
+- id: rotated_logs
+  name: Rotated system log files
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/var/log/*.gz"
+    - "**/var/log/*.[0-9]"
+  reason: "This directory contains rotated, compressed historical system logs (like syslog.1, auth.log.2.gz, dpkg.log.3.gz). Deleting these old log archives is safe: it does not affect active logging processes or application telemetry."
+  default_action: clean
+
+- id: flatpak_user_cache
+  name: Flatpak application cache
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/.var/app/*/cache"
+  reason: "This directory holds user-level cache files for sandboxed Flatpak applications. Deleting this is safe: apps will rebuild their caches dynamically, though initial app startups after cleanup might take slightly longer."
+  default_action: clean
+
+- id: snap_cache
+  name: Snap package download cache
+  category: temporary_file
+  risk: review
+  patterns:
+    - "**/var/lib/snapd/snaps"
+  reason: "This directory stores downloaded snap package files. Snapd retains old revisions to support reverting packages. Deleting inactive revisions is safe, but be careful: removing active/current snap files will break the respective software. It is marked as 'review' for safety."
+  default_action: review

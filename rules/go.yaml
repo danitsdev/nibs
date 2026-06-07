@@ -1,0 +1,10 @@
+- id: go_build_cache
+  name: Go build cache
+  category: language_cache
+  risk: safe
+  patterns:
+    - "**/.cache/go-build"
+  reason: "This directory contains compiled Go package objects and linker outputs. Deleting this is completely safe: source code files are unaffected. Go will rebuild compile targets automatically next time you run or build your projects."
+  restore:
+    - "go build"
+  default_action: clean

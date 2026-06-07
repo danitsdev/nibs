@@ -1,0 +1,38 @@
+id: cargo
+name: Cargo
+category: language_cache
+platforms: [linux]
+running: ["cargo", "rustc", "rust-analyzer"]
+items:
+  - id: registry-cache
+    name: Cargo registry cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cargo/registry/cache"
+      - "**/.cargo/registry/src"
+    reason: "Cargo registry cache stores downloaded crates and expanded crate sources. Cleaning it is rebuildable, but future Rust builds will re-download and unpack dependencies."
+    kept:
+      - "installed Rust toolchains"
+      - "Cargo configuration"
+      - "credentials"
+      - "project source code"
+    restore:
+      - "cargo build"
+
+  - id: git-checkouts
+    name: Cargo git checkout cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cargo/git/checkouts"
+      - "**/.cargo/git/db"
+    reason: "Cargo git cache stores dependency repositories fetched from Git. It is rebuildable, but future builds may need to clone dependencies again."
+    kept:
+      - "Cargo credentials"
+      - "Cargo configuration"
+      - "project source code"
+    restore:
+      - "cargo build"

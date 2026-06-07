@@ -1,0 +1,28 @@
+- id: rust_target
+  name: Rust target directory
+  category: build_artifact
+  risk: safe
+  patterns:
+    - "**/target"
+  reason: "This directory contains compiled cargo build artifacts, dependencies object files, and final binaries. Deleting this is completely safe: source code files are untouched. The next cargo compilation will download and compile everything from scratch (similar to running 'cargo clean')."
+  restore:
+    - "cargo build"
+  default_action: review
+
+- id: cargo_registry
+  name: Cargo registry cache
+  category: language_cache
+  risk: review
+  patterns:
+    - "**/.cargo/registry"
+  reason: "This directory contains downloaded crate source packages (.crate tarballs) and index caches used by Cargo. Deleting this is safe: your local projects and source files are unaffected. Cargo will automatically re-download any required dependencies from crates.io on the next build."
+  default_action: review
+
+- id: cargo_git
+  name: Cargo git database cache
+  category: language_cache
+  risk: review
+  patterns:
+    - "**/.cargo/git"
+  reason: "This folder contains git repositories database caches and checked-out checkouts for Git dependencies in your Cargo projects. Deleting this is safe: Cargo will re-clone these repositories on the next build."
+  default_action: review

@@ -1,0 +1,61 @@
+- id: node_modules
+  name: Node modules
+  category: rebuildable_dependency
+  risk: safe
+  patterns:
+    - "**/node_modules"
+  reason: "This directory stores package dependencies downloaded by npm/pnpm/yarn. Deleting this is safe: your project source files are completely untouched. Running 'npm install' or 'pnpm install' will restore all dependencies."
+  restore:
+    - "npm install"
+    - "pnpm install"
+    - "yarn install"
+  default_action: review
+
+- id: next_cache
+  name: Next.js build cache
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.next"
+  reason: "This folder contains compiled files and cached assets from Next.js server builds. Deleting this is safe: the dev server will rebuild them automatically on the next execution, and it does not affect your configuration files or codebase."
+  restore:
+    - "next build"
+  default_action: clean
+
+- id: nuxt_cache
+  name: Nuxt.js build cache
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.nuxt"
+  reason: "This folder contains temporary runtime cache and build files compiled by Nuxt.js. Deleting this is safe and Nuxt will automatically regenerate them next time you compile or run your development server."
+  restore:
+    - "nuxt build"
+  default_action: clean
+
+- id: vite_cache
+  name: Vite cache
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.vite"
+  reason: "This folder stores pre-bundled dependency modules cached by the Vite development server. Deleting this is safe: Vite will automatically re-bundle them on demand, and it helps resolve cached module import bugs."
+  default_action: clean
+
+- id: turbo_cache
+  name: Turborepo cache
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.turbo"
+  reason: "This directory contains cached command run outputs compiled by Turborepo. Deleting this is safe: Turborepo will re-run the tasks and regenerate the cache files upon next execution."
+  default_action: clean
+
+- id: parcel_cache
+  name: Parcel cache
+  category: framework_cache
+  risk: safe
+  patterns:
+    - "**/.parcel-cache"
+  reason: "This directory contains compiled files and cache indices generated during bundler execution. Deleting this is safe and will be rebuilt during the next compilation."
+  default_action: clean

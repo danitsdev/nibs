@@ -1,0 +1,17 @@
+- id: gradle_cache
+  name: Gradle cache
+  category: build_artifact
+  risk: review
+  patterns:
+    - "**/.gradle/caches"
+  reason: "This folder contains downloaded package dependencies, build scripts caches, and compiled wrapper plugins for Gradle. Deleting this is safe: Gradle will automatically re-download dependencies and recompile plugins on your next build, but it will take a few minutes for the first compilation."
+  default_action: review
+
+- id: maven_cache
+  name: Maven repository cache
+  category: language_cache
+  risk: review
+  patterns:
+    - "**/.m2/repository"
+  reason: "This directory contains the local cache of Java dependencies downloaded by Maven. Deleting this is safe: Maven will automatically re-download them from Maven Central during your next build, though the compile time will increase temporarily."
+  default_action: review

@@ -1,0 +1,30 @@
+/target/
+
+# Runtime logs and traces
+*.log
+dusty.log
+nibble.log
+
+# Local editor and OS noise
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Local agent/user overrides
+AGENTS.local.md
+CLAUDE.local.md
+.agents/
+.codex/
+
+# Scratch downloads and temporary reference checkouts
+/scratch/
+*.rpm
+*.deb
+*.tar.gz
+*.zip
+
+# Local screenshots and generated media
+*.png
+*.gif

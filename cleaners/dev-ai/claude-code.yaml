@@ -1,0 +1,72 @@
+id: claude-code
+name: Claude Code
+category: dev_ai_agent
+platforms: [linux]
+running: ["claude"]
+items:
+  - id: debug-logs
+    name: Claude Code debug logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.claude/logs"
+      - "**/.claude/debug"
+      - "**/.claude/*.log"
+    reason: "Claude Code debug logs are troubleshooting output. Cleaning them does not remove projects, settings, auth state, or source files."
+    kept:
+      - "Claude Code settings and auth state"
+      - "project instructions and CLAUDE.md files"
+      - "session transcripts and project memory"
+    restore:
+      - "Run Claude Code again to generate fresh logs."
+
+  - id: transient-caches
+    name: Claude Code transient caches
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    block_if_running: true
+    paths:
+      - "**/.claude/paste-cache"
+      - "**/.claude/image-cache"
+      - "**/.claude/shell-snapshots"
+    reason: "These folders hold temporary pasted payloads, generated image payloads, or shell snapshots from past sessions. They can be rebuilt or recreated when needed."
+    kept:
+      - "settings"
+      - "auth state"
+      - "project memory and transcripts"
+      - "source files"
+
+  - id: session-history
+    name: Claude Code sessions and history
+    risk: review
+    safety_class: user_data
+    default_action: review
+    block_if_running: true
+    paths:
+      - "**/.claude/projects"
+      - "**/.claude/sessions"
+      - "**/.claude/history.jsonl"
+      - "**/.claude/file-history"
+    reason: "Claude Code session data can contain prompts, terminal output, file snapshots, project context, and other personal or sensitive development history."
+    kept:
+      - "auth state"
+      - "settings"
+      - "installed plugins"
+
+  - id: settings-auth
+    name: Claude Code settings and auth state
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.claude.json"
+      - "**/.claude/settings.json"
+      - "**/.claude/**/settings.json"
+    reason: "These files may contain permissions, account state, tokens, preferences, or project-specific configuration. Nibble reports them only if they are unusually large."
+    kept:
+      - "all credentials"
+      - "all settings"
+      - "all project instructions"
