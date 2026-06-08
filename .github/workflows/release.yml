@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            asset_name: linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            asset_name: linux-aarch64
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cross Compile Binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release
+
+      - name: Package Assets
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          PKG_DIR="nibble-${TAG_NAME}"
+          mkdir -p "${PKG_DIR}"
+          
+          # Copy target files
+          cp "target/${{ matrix.target }}/release/nibs" "${PKG_DIR}/"
+          cp README.md LICENSE "${PKG_DIR}/"
+          
+          # Create archive
+          TARBALL="nibble-${TAG_NAME}-${{ matrix.asset_name }}.tar.gz"
+          tar -czvf "${TARBALL}" "${PKG_DIR}"
+          
+          echo "TARBALL_PATH=${TARBALL}" >> $GITHUB_ENV
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.TARBALL_PATH }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

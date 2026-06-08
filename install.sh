@@ -19,8 +19,12 @@ if [ "$OS" != "Linux" ]; then
     exit 1
 fi
 
-if [ "$ARCH" != "x86_64" ]; then
-    echo -e "${RED}Error:${NC} Unsupported architecture: $ARCH. Nibble currently only provides official release binaries for x86_64."
+if [ "$ARCH" = "x86_64" ]; then
+    ARCH_SUFFIX="linux-x86_64"
+elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    ARCH_SUFFIX="linux-aarch64"
+else
+    echo -e "${RED}Error:${NC} Unsupported architecture: $ARCH. Nibble only provides official binaries for x86_64 and aarch64."
     exit 1
 fi
 
@@ -33,7 +37,7 @@ if [ -z "$TAG" ]; then
 fi
 
 echo -e "${BLUE}==>${NC} Downloading version $TAG..."
-URL="https://github.com/danitsdev/nibble/releases/download/${TAG}/nibble-${TAG}-linux-x86_64.tar.gz"
+URL="https://github.com/danitsdev/nibble/releases/download/${TAG}/nibble-${TAG}-${ARCH_SUFFIX}.tar.gz"
 
 TEMP_DIR=$(mktemp -d)
 TARBALL="${TEMP_DIR}/nibble.tar.gz"
