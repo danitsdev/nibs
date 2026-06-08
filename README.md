@@ -79,6 +79,14 @@ It does **not** blindly delete your home folder. It separates things into:
 
 ### Install
 
+**Via Cargo:**
+
+```bash
+cargo install nibs
+```
+
+**Via precompiled binary script (Linux x86_64/ARM64):**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/danitsdev/nibble/main/install.sh | bash
 ```
