@@ -30,9 +30,15 @@ Nibble is currently an early Linux preview. It is open to contributions across c
 - **JSON Reports**: script-friendly output for automation and review.
 - **Trash-first Cleanup**: recoverable cleanup by default instead of permanent deletion.
 
-## Quick Start
+## Installation
 
-From source:
+Install the precompiled binary directly (Linux x86_64):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/danitsdev/nibble/main/install.sh | bash
+```
+
+Or build from source:
 
 ```bash
 cargo build --release
