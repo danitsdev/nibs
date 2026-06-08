@@ -5,6 +5,9 @@ edition = "2024"
 description = "A safe terminal cleaner for Linux developers"
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/danitsdev/nibble"
+homepage = "https://github.com/danitsdev/nibble"
+documentation = "https://github.com/danitsdev/nibble"
 keywords = ["linux", "cleanup", "tui", "developer-tools"]
 categories = ["command-line-utilities", "filesystem"]
 
