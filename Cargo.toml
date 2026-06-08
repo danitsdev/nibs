@@ -1,5 +1,5 @@
 [package]
-name = "nibble"
+name = "nibs"
 version = "0.1.0"
 edition = "2024"
 description = "A safe terminal cleaner for Linux developers"
