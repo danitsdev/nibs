@@ -53,7 +53,7 @@ fn check_write_permissions() -> CheckResult {
     let mut errors = 0;
 
     if let Some(h) = home {
-        let test_file = h.join(".nibble_perm_test");
+        let test_file = h.join(".nibs_perm_test");
         if fs::write(&test_file, "perm_test").is_ok() {
             let _ = fs::remove_file(&test_file);
             details.push("Home directory write permissions: OK".to_string());
@@ -65,7 +65,7 @@ fn check_write_permissions() -> CheckResult {
         details.push("Home directory: NOT FOUND".to_string());
     }
 
-    let tmp_file = tmp.join(".nibble_perm_test");
+    let tmp_file = tmp.join(".nibs_perm_test");
     if fs::write(&tmp_file, "perm_test").is_ok() {
         let _ = fs::remove_file(&tmp_file);
         details.push("/tmp directory write permissions: OK".to_string());

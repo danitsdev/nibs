@@ -45,7 +45,7 @@ items:
       - "**/.local/share/Steam/steamapps/compatdata"
       - "**/.steam/steam/steamapps/compatdata"
       - "**/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata"
-    reason: "Steam Proton prefixes store Wine/Proton compatibility data for Windows games. Steam can recreate them, but they may contain per-game configuration and save data, so Nibble keeps them review-only."
+    reason: "Steam Proton prefixes store Wine/Proton compatibility data for Windows games. Steam can recreate them, but they may contain per-game configuration and save data, so Nibs keeps them review-only."
 
   - id: logs
     name: Steam logs

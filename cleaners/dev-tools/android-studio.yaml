@@ -69,4 +69,4 @@ items:
     default_action: never
     paths:
       - "**/.android/avd"
-    reason: "Android Virtual Devices may contain emulator disks, app state, test data, and local credentials. Nibble must not clean them by default."
+    reason: "Android Virtual Devices may contain emulator disks, app state, test data, and local credentials. Nibs must not clean them by default."

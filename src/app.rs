@@ -11,7 +11,7 @@ use crate::tui::{run_tui_home, run_tui_scanning, run_tui_trash_manager};
 use crate::uninstall::run_uninstall;
 use anyhow::{Context, Result};
 
-/// Entry point coordinator for running the Nibble application.
+/// Entry point coordinator for running the Nibs application.
 pub fn run_app() -> Result<()> {
     // 1. Resolve arguments and actions
     let action = Cli::resolve_action();
@@ -34,7 +34,7 @@ pub fn run_app() -> Result<()> {
 }
 
 fn run_doctor_cli() -> Result<()> {
-    println!("Nibble Environment Doctor — Diagnostics");
+    println!("Nibs Environment Doctor — Diagnostics");
     println!("--------------------------------------------------");
     let results = crate::doctor::run_diagnostics();
     for result in results {
@@ -82,7 +82,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
             return Ok(());
         }
 
-        println!("Nibble — Terminal Cleaner for Developers");
+        println!("Nibs — Terminal Cleaner for Developers");
         println!("Target path : {:?}", target_path);
         println!("Scan scope  : {:?}", scope);
         println!("Profile     : {}", config.profile.label());

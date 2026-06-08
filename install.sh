@@ -8,14 +8,14 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}==>${NC} Installing Nibble..."
+echo -e "${BLUE}==>${NC} Installing Nibs..."
 
 # Determine OS and Architecture
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 if [ "$OS" != "Linux" ]; then
-    echo -e "${RED}Error:${NC} Nibble is a Linux-first tool. Unsupported OS: $OS"
+    echo -e "${RED}Error:${NC} Nibs is a Linux-first tool. Unsupported OS: $OS"
     exit 1
 fi
 
@@ -24,23 +24,23 @@ if [ "$ARCH" = "x86_64" ]; then
 elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
     ARCH_SUFFIX="linux-aarch64"
 else
-    echo -e "${RED}Error:${NC} Unsupported architecture: $ARCH. Nibble only provides official binaries for x86_64 and aarch64."
+    echo -e "${RED}Error:${NC} Unsupported architecture: $ARCH. Nibs only provides official binaries for x86_64 and aarch64."
     exit 1
 fi
 
 # Fetch the latest release tag from GitHub API
 echo -e "${BLUE}==>${NC} Fetching latest release info..."
-TAG=$(curl -sfS https://api.github.com/repos/danitsdev/nibble/releases/latest | grep -o '"tag_name": "[^"]*' | grep -o '[^"]*$' || echo "v0.1.0")
+TAG=$(curl -sfS https://api.github.com/repos/danitsdev/nibs/releases/latest | grep -o '"tag_name": "[^"]*' | grep -o '[^"]*$' || echo "v0.1.0")
 
 if [ -z "$TAG" ]; then
     TAG="v0.1.0"
 fi
 
 echo -e "${BLUE}==>${NC} Downloading version $TAG..."
-URL="https://github.com/danitsdev/nibble/releases/download/${TAG}/nibble-${TAG}-${ARCH_SUFFIX}.tar.gz"
+URL="https://github.com/danitsdev/nibs/releases/download/${TAG}/nibs-${TAG}-${ARCH_SUFFIX}.tar.gz"
 
 TEMP_DIR=$(mktemp -d)
-TARBALL="${TEMP_DIR}/nibble.tar.gz"
+TARBALL="${TEMP_DIR}/nibs.tar.gz"
 
 if ! curl -fL -o "$TARBALL" "$URL"; then
     echo -e "${RED}Error:${NC} Failed to download release from $URL"
@@ -51,8 +51,8 @@ fi
 echo -e "${BLUE}==>${NC} Extracting binary..."
 tar -xzf "$TARBALL" -C "$TEMP_DIR"
 
-# The tarball contains a folder named nibble-${TAG}
-BINARY="${TEMP_DIR}/nibble-${TAG}/nibs"
+# The tarball contains a folder named nibs-${TAG}
+BINARY="${TEMP_DIR}/nibs-${TAG}/nibs"
 
 if [ ! -f "$BINARY" ]; then
     echo -e "${RED}Error:${NC} Binary 'nibs' not found in the release archive."
@@ -93,5 +93,5 @@ fi
 # Cleanup
 rm -rf "$TEMP_DIR"
 
-echo -e "${GREEN}✓${NC} Nibble has been successfully installed!"
+echo -e "${GREEN}✓${NC} Nibs has been successfully installed!"
 echo -e "Try running: ${GREEN}nibs${NC}"

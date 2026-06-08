@@ -34,4 +34,4 @@ items:
       - "**/.azure/accessTokens.json"
       - "**/.azure/azureProfile.json"
       - "**/.kube/config"
-    reason: "Cloud CLI credential and profile files can contain account, cluster, token, or secret material. Nibble must not clean them by default."
+    reason: "Cloud CLI credential and profile files can contain account, cluster, token, or secret material. Nibs must not clean them by default."

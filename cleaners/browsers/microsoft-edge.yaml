@@ -48,4 +48,4 @@ items:
       - "**/.config/microsoft-edge-dev/*/Login Data"
       - "**/.config/microsoft-edge-dev/*/Cookies"
       - "**/.config/microsoft-edge-dev/*/History"
-    reason: "Microsoft Edge profile databases can contain credentials, cookies, history, and account-linked state. Nibble only reports them as protected data."
+    reason: "Microsoft Edge profile databases can contain credentials, cookies, history, and account-linked state. Nibs only reports them as protected data."

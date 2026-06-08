@@ -28,7 +28,7 @@ items:
       - "Reopen Firefox to rebuild cache files."
 ```
 
-`detect` is intentionally lightweight. Nibble checks configured commands, desktop files, and paths. It does not scan running processes.
+`detect` is intentionally lightweight. Nibs checks configured commands, desktop files, and paths. It does not scan running processes.
 
 Prefer focused `items` over broad directory rules. Sensitive config, credentials, sessions, and user data should be separate `risk: risky` or `safety_class: secret_or_auth` items with `default_action: never`.
 
@@ -51,7 +51,7 @@ Use `rules/` for generic language, framework, filesystem, and Linux ecosystem pa
 
 ## Research Notes
 
-When adding recipes, prefer primary sources such as upstream app docs, installed desktop files, and established open source cleaner catalogs. It is fine to use projects like Mole, BleachBit, and CleanerML to discover candidate apps and path families, but write Nibble recipes in this schema with Linux-first safety review instead of copying foreign cleaner definitions wholesale.
+When adding recipes, prefer primary sources such as upstream app docs, installed desktop files, and established open source cleaner catalogs. It is fine to use projects like Mole, BleachBit, and CleanerML to discover candidate apps and path families, but write Nibs recipes in this schema with Linux-first safety review instead of copying foreign cleaner definitions wholesale.
 
 High-risk targets should stay protected:
 

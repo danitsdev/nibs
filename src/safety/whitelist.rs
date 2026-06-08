@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-/// Loads the user whitelist from `~/.config/nibble/whitelist.txt` and `~/.nibbleignore` if they exist.
+/// Loads the user whitelist from `~/.config/nibs/whitelist.txt` and `~/.nibsignore` if they exist.
 pub fn load_user_whitelist() -> Vec<PathBuf> {
     let mut whitelist = Vec::new();
     let home = match std::env::var("HOME").ok().map(PathBuf::from) {
@@ -10,8 +10,8 @@ pub fn load_user_whitelist() -> Vec<PathBuf> {
 
     // Paths of candidate files
     let paths = vec![
-        home.join(".config/nibble/whitelist.txt"),
-        home.join(".nibbleignore"),
+        home.join(".config/nibs/whitelist.txt"),
+        home.join(".nibsignore"),
     ];
 
     for path in paths {
@@ -110,7 +110,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let temp_home = std::env::temp_dir().join(format!("nibble_test_home_{}", unique_id));
+        let temp_home = std::env::temp_dir().join(format!("nibs_test_home_{}", unique_id));
         std::fs::create_dir_all(&temp_home).unwrap();
 
         let old_home = std::env::var("HOME").ok();
@@ -118,8 +118,8 @@ mod tests {
             std::env::set_var("HOME", &temp_home);
         }
 
-        // Create ~/.config/nibble directory
-        let config_dir = temp_home.join(".config/nibble");
+        // Create ~/.config/nibs directory
+        let config_dir = temp_home.join(".config/nibs");
         std::fs::create_dir_all(&config_dir).unwrap();
 
         // Write whitelist.txt
@@ -130,9 +130,9 @@ mod tests {
         writeln!(file, "~/relative_to_home").unwrap();
         writeln!(file).unwrap(); // empty line
 
-        // Write .nibbleignore
-        let nibbleignore_path = temp_home.join(".nibbleignore");
-        let mut file2 = File::create(&nibbleignore_path).unwrap();
+        // Write .nibsignore
+        let nibsignore_path = temp_home.join(".nibsignore");
+        let mut file2 = File::create(&nibsignore_path).unwrap();
         writeln!(file2, "another_relative").unwrap();
 
         let loaded = load_user_whitelist();

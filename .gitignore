@@ -3,7 +3,7 @@
 # Runtime logs and traces
 *.log
 dusty.log
-nibble.log
+nibs.log
 
 # Local editor and OS noise
 .DS_Store

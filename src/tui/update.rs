@@ -172,7 +172,7 @@ fn handle_home_keys(
                     state.screen = TuiScreen::Goodbye;
                     state.start_time = std::time::Instant::now();
                     state.status_message =
-                        "Thank you for using Nibble. Press any key to quit.".to_string();
+                        "Thank you for using Nibs. Press any key to quit.".to_string();
                 }
                 _ => {}
             }
@@ -180,7 +180,7 @@ fn handle_home_keys(
         KeyCode::Char('q') | KeyCode::Esc => {
             state.screen = TuiScreen::Goodbye;
             state.start_time = std::time::Instant::now();
-            state.status_message = "Thank you for using Nibble. Press any key to quit.".to_string();
+            state.status_message = "Thank you for using Nibs. Press any key to quit.".to_string();
         }
         _ => {}
     }

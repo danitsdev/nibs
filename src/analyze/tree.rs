@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_build_disk_tree_and_delete() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_analyze_tree");
+        let temp_dir = std::env::temp_dir().join("nibs_test_analyze_tree");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 

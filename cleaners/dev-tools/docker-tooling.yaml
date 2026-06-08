@@ -34,4 +34,4 @@ items:
     paths:
       - "**/.docker/config.json"
       - "**/.docker/contexts"
-    reason: "Docker config and contexts can contain registry auth helpers, endpoints, and account-linked state. Nibble must not clean them by default."
+    reason: "Docker config and contexts can contain registry auth helpers, endpoints, and account-linked state. Nibs must not clean them by default."

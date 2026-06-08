@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn never_clean_items_are_blocked() {
         let finding = Finding {
-            path: PathBuf::from("/tmp/nibble-secret"),
+            path: PathBuf::from("/tmp/nibs-secret"),
             size_bytes: 1024,
             category: FindingCategory::DevAiAgent,
             risk: RiskLevel::Risky,
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn clean_path_blocks_whitelisted() {
-        let temp_home = std::env::temp_dir().join("nibble_test_clean_home");
+        let temp_home = std::env::temp_dir().join("nibs_test_clean_home");
         let _ = std::fs::remove_dir_all(&temp_home);
         std::fs::create_dir_all(&temp_home).unwrap();
 
@@ -201,8 +201,8 @@ mod tests {
             std::env::set_var("HOME", &temp_home);
         }
 
-        // Write .nibbleignore in temp_home
-        let ignore_path = temp_home.join(".nibbleignore");
+        // Write .nibsignore in temp_home
+        let ignore_path = temp_home.join(".nibsignore");
         std::fs::write(&ignore_path, "/tmp/blocked_path\n").unwrap();
 
         let target = std::path::Path::new("/tmp/blocked_path/some_cache");
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_shred_path() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_shred");
+        let temp_dir = std::env::temp_dir().join("nibs_test_shred");
         let _ = std::fs::remove_dir_all(&temp_dir);
         std::fs::create_dir_all(&temp_dir).unwrap();
 

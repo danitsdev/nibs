@@ -1,5 +1,5 @@
 use crate::findings::RiskLevel;
-use crate::theme::NibbleTheme;
+use crate::theme::NibsTheme;
 use crate::tui::model::{TuiScreen, TuiState};
 use ratatui::{
     Frame,
@@ -16,7 +16,7 @@ const MASCOT_WIDTH: u16 = 12;
 const MASCOT_WIDTH_USIZE: usize = MASCOT_WIDTH as usize;
 type MascotFrame = [&'static str; 3];
 
-fn mascot_style(c: char, theme: &NibbleTheme) -> Style {
+fn mascot_style(c: char, theme: &NibsTheme) -> Style {
     match c {
         '(' | ')' | '_' | '[' | ']' | '~' | 'W' => Style::default()
             .fg(theme.primary)
@@ -230,7 +230,7 @@ fn render_mascot_with_margins(frame: &mut Frame, area: Rect, mascot_lines: Vec<L
 pub fn get_mascot_lines(
     elapsed_ms: u64,
     state_type: &str,
-    theme: &NibbleTheme,
+    theme: &NibsTheme,
 ) -> Vec<Line<'static>> {
     mascot_frame(elapsed_ms, state_type)
         .into_iter()
@@ -285,7 +285,7 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             ),
         ]),
         Line::from(vec![Span::styled(
-            "Configure how Nibble performs cleaning actions and personalize your UI theme.",
+            "Configure how Nibs performs cleaning actions and personalize your UI theme.",
             Style::default().fg(Color::DarkGray),
         )]),
     ];
@@ -389,7 +389,7 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             )),
             Line::from(""),
             Line::from(
-                "Choose whether Nibble should move files to standard system trash, delete them permanently, or securely shred them.",
+                "Choose whether Nibs should move files to standard system trash, delete them permanently, or securely shred them.",
             ),
             Line::from(""),
             Line::from(vec![
@@ -440,7 +440,7 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
-            Line::from("Customize Nibble's color scheme. Choose from built-in popular themes."),
+            Line::from("Customize Nibs's color scheme. Choose from built-in popular themes."),
             Line::from(""),
             Line::from("Available themes (cycle with Space/Enter):"),
             Line::from(""),
@@ -747,7 +747,7 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
         ("Trash", "Review, restore or empty files moved by Nibs"),
         ("Settings", "Safety mode, cleanup method and recipes"),
         (
-            "Exit Nibble",
+            "Exit Nibs",
             "Return to your terminal with a friendly goodbye",
         ),
     ];
@@ -1332,7 +1332,7 @@ fn draw_scanning(state: &mut TuiState, frame: &mut Frame) {
     // Pulsing title
     let dot_count = (elapsed_ms / 400) % 4;
     let dots = ".".repeat(dot_count as usize);
-    let title_padded = format!(" Nibble is scanning for dust{} ", dots);
+    let title_padded = format!(" Nibs is scanning for dust{} ", dots);
 
     let scanning_block = Block::default()
         .title(Line::from(vec![Span::styled(
@@ -1776,7 +1776,7 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
     let primary = state.theme.primary;
 
     let wizard_block = Block::default()
-        .title(" Nibble Cleaning Profile Wizard ")
+        .title(" Nibs Cleaning Profile Wizard ")
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(primary));
@@ -1800,11 +1800,11 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
 
     let mut wizard_lines = vec![
         Line::from(vec![Span::styled(
-            "Welcome to Nibble!",
+            "Welcome to Nibs!",
             Style::default().fg(primary).add_modifier(Modifier::BOLD),
         )]),
         Line::from(vec![
-            Span::raw("Nibble scanned and found "),
+            Span::raw("Nibs scanned and found "),
             Span::styled(
                 format!("{} reclaimable items", state.findings.len()),
                 Style::default().fg(primary).add_modifier(Modifier::BOLD),
@@ -1825,7 +1825,7 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
                 Style::default().fg(state.theme.ink),
             ),
         ]),
-        Line::from("Choose how assertive Nibble should be for this cleanup pass:"),
+        Line::from("Choose how assertive Nibs should be for this cleanup pass:"),
         Line::from(""),
     ];
 
@@ -2024,7 +2024,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
         let header_text = vec![
             Line::from(vec![
                 Span::styled(
-                    " Nibble ",
+                    " Nibs ",
                     Style::default()
                         .fg(state.theme.ink)
                         .add_modifier(Modifier::BOLD),
@@ -2752,7 +2752,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
 }
 
 fn render_confirm_bar(
-    theme: &NibbleTheme,
+    theme: &NibsTheme,
     idx: usize,
     yes_key: &str,
     yes_label: &str,
@@ -2885,7 +2885,7 @@ fn get_cpu_model() -> String {
     "Generic CPU".to_string()
 }
 
-fn draw_cpu_bar_graph(pct: f64, theme: &NibbleTheme) -> Line<'static> {
+fn draw_cpu_bar_graph(pct: f64, theme: &NibsTheme) -> Line<'static> {
     let mut spans = vec![Span::styled(
         "  CPU Load:   ",
         Style::default().fg(Color::DarkGray),
@@ -2904,7 +2904,7 @@ fn draw_cpu_bar_graph(pct: f64, theme: &NibbleTheme) -> Line<'static> {
 }
 
 fn draw_bar_graph(
-    theme: &NibbleTheme,
+    theme: &NibsTheme,
     label: &str,
     used: u64,
     total: u64,
@@ -2932,7 +2932,7 @@ fn draw_bar_graph(
 }
 
 fn draw_net_bar_graph(
-    theme: &NibbleTheme,
+    theme: &NibsTheme,
     label: &str,
     rate_kb: f64,
     max_kb: f64,
@@ -2988,7 +2988,7 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
             ),
         ]),
         Line::from(vec![Span::styled(
-            "Review safe maintenance guidance. Nibble avoids sudo-only destructive actions here.",
+            "Review safe maintenance guidance. Nibs avoids sudo-only destructive actions here.",
             Style::default().fg(Color::DarkGray),
         )]),
     ];
@@ -3880,7 +3880,7 @@ fn draw_goodbye(state: &TuiState, frame: &mut Frame) {
 
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
-        "Nibble is returning you to the terminal.",
+        "Nibs is returning you to the terminal.",
         Style::default().fg(Color::Gray),
     )));
     lines.push(Line::from(vec![

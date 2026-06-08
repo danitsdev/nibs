@@ -216,7 +216,7 @@ fn draw_analyze(state: &mut AnalyzeTuiState, frame: &mut Frame) {
     let header_lines = vec![
         Line::from(vec![
             Span::styled(
-                " Nibble Disk Analyzer ",
+                " Nibs Disk Analyzer ",
                 Style::default()
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),

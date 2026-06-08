@@ -55,4 +55,4 @@ items:
       - "**/.claude.json"
       - "**/.claude/settings.json"
       - "**/.claude/**/settings.json"
-    reason: "These files may contain permissions, account state, tokens, preferences, or project-specific configuration. Nibble reports them only if they are unusually large."
+    reason: "These files may contain permissions, account state, tokens, preferences, or project-specific configuration. Nibs reports them only if they are unusually large."

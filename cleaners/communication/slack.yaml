@@ -34,4 +34,4 @@ items:
       - "**/.config/Slack/Local Storage"
       - "**/.config/Slack/Session Storage"
       - "**/.config/Slack/Preferences"
-    reason: "Slack identity and workspace databases can contain login state, workspace metadata, and account-linked state. Nibble must not clean them by default."
+    reason: "Slack identity and workspace databases can contain login state, workspace metadata, and account-linked state. Nibs must not clean them by default."

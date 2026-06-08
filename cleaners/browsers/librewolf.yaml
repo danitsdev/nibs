@@ -52,4 +52,4 @@ items:
       - "**/.config/librewolf/librewolf/*/cookies.sqlite"
       - "**/.config/librewolf/librewolf/*/places.sqlite"
       - "**/.config/librewolf/librewolf/*/prefs.js"
-    reason: "LibreWolf profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibble must not clean these by default."
+    reason: "LibreWolf profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibs must not clean these by default."

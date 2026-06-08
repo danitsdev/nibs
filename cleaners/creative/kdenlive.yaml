@@ -30,4 +30,4 @@ items:
     paths:
       - "**/.local/share/kdenlive"
       - "**/.var/app/org.kde.kdenlive/data/kdenlive"
-    reason: "Kdenlive data directories may include project resources, titles, layouts, proxies, and user workflow state. Nibble must not clean them by default."
+    reason: "Kdenlive data directories may include project resources, titles, layouts, proxies, and user workflow state. Nibs must not clean them by default."

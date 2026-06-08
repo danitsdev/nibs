@@ -43,4 +43,4 @@ items:
       - "**/.config/opera/Default/Cookies"
       - "**/.config/opera/Default/Login Data"
       - "**/.config/opera/Default/History"
-    reason: "Opera profile databases can contain credentials, cookies, browsing history, and account-linked state. Nibble must not clean them by default."
+    reason: "Opera profile databases can contain credentials, cookies, browsing history, and account-linked state. Nibs must not clean them by default."

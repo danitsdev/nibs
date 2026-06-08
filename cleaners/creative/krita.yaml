@@ -29,4 +29,4 @@ items:
       - "**/.local/share/krita"
       - "**/.config/kritarc"
       - "**/.var/app/org.kde.krita/data/krita"
-    reason: "Krita resources can include brushes, palettes, workspaces, templates, and user-created assets. Nibble must not clean them by default."
+    reason: "Krita resources can include brushes, palettes, workspaces, templates, and user-created assets. Nibs must not clean them by default."

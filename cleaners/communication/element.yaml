@@ -40,4 +40,4 @@ items:
       - "**/.config/Riot/Local Storage"
       - "**/.config/Riot/Session Storage"
       - "**/.config/Riot/Cookies"
-    reason: "Element local storage can contain Matrix session state, encryption metadata, cookies, and account-linked data. Nibble must not clean it by default."
+    reason: "Element local storage can contain Matrix session state, encryption metadata, cookies, and account-linked data. Nibs must not clean it by default."

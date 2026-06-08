@@ -23,12 +23,12 @@ fn init_logging() {
         return;
     };
 
-    let log_dir = base_dirs.cache_dir().join("nibble");
+    let log_dir = base_dirs.cache_dir().join("nibs");
     if fs::create_dir_all(&log_dir).is_err() {
         return;
     }
 
-    let Ok(log_file) = File::create(log_dir.join("nibble.log")) else {
+    let Ok(log_file) = File::create(log_dir.join("nibs.log")) else {
         return;
     };
 
@@ -43,7 +43,7 @@ fn main() {
     // Initialize file-based logging
     init_logging();
 
-    tracing::info!("Starting Nibble...");
+    tracing::info!("Starting Nibs...");
 
     // Execute app runner
     if let Err(e) = app::run_app() {
@@ -52,5 +52,5 @@ fn main() {
         std::process::exit(1);
     }
 
-    tracing::info!("Nibble completed successfully.");
+    tracing::info!("Nibs completed successfully.");
 }

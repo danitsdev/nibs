@@ -49,4 +49,4 @@ items:
       - "**/.config/discordcanary/Local Storage"
       - "**/.config/discordcanary/Session Storage"
       - "**/.config/discordcanary/Cookies"
-    reason: "Discord local state can contain login state, account-linked data, and app settings. Nibble must not clean it by default."
+    reason: "Discord local state can contain login state, account-linked data, and app settings. Nibs must not clean it by default."

@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn calculates_allocated_disk_usage_for_files() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_allocated_size");
+        let temp_dir = std::env::temp_dir().join("nibs_test_allocated_size");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 
@@ -125,7 +125,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn does_not_double_count_hardlinked_files_inside_one_tree() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_hardlink_size");
+        let temp_dir = std::env::temp_dir().join("nibs_test_hardlink_size");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 

@@ -1,13 +1,13 @@
 <div align="center">
-  <h1>Nibble</h1>
+  <h1>Nibs</h1>
   <p><em>🐭 Free up space on Linux without deleting the wrong things.</em></p>
 </div>
 
 <p align="center">
-  <a href="https://github.com/danitsdev/nibble/stargazers"><img src="https://img.shields.io/github/stars/danitsdev/nibble?style=flat-square" alt="GitHub stars"></a>
-  <a href="https://github.com/danitsdev/nibble/releases"><img src="https://img.shields.io/github/v/tag/danitsdev/nibble?label=version&style=flat-square" alt="Version"></a>
+  <a href="https://github.com/danitsdev/nibs/stargazers"><img src="https://img.shields.io/github/stars/danitsdev/nibs?style=flat-square" alt="GitHub stars"></a>
+  <a href="https://github.com/danitsdev/nibs/releases"><img src="https://img.shields.io/github/v/tag/danitsdev/nibs?label=version&style=flat-square" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
-  <a href="https://github.com/danitsdev/nibble/actions"><img src="https://img.shields.io/github/actions/workflow/status/danitsdev/nibble/ci.yml?branch=main&style=flat-square" alt="CI status"></a>
+  <a href="https://github.com/danitsdev/nibs/actions"><img src="https://img.shields.io/github/actions/workflow/status/danitsdev/nibs/ci.yml?branch=main&style=flat-square" alt="CI status"></a>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ---
 
-## Why Nibble?
+## Why Nibs?
 
 Your Linux machine can lose tens or hundreds of gigabytes to boring junk:
 
@@ -35,7 +35,7 @@ Your Linux machine can lose tens or hundreds of gigabytes to boring junk:
 - old SDKs, emulators, game caches, and local AI model stores
 - files left behind by apps that are no longer installed
 
-Nibble helps you find that space quickly.
+Nibs helps you find that space quickly.
 
 It does **not** blindly delete your home folder. It separates things into:
 
@@ -43,7 +43,7 @@ It does **not** blindly delete your home folder. It separates things into:
 - **review** — large things worth checking first
 - **risky** — configs, sessions, credentials, memories, and personal data kept protected
 
-> Nibble is built for the moment when your disk is full and you want 10–50 GB back without fear.
+> Nibs is built for the moment when your disk is full and you want 10–50 GB back without fear.
 
 ---
 
@@ -68,7 +68,7 @@ It does **not** blindly delete your home folder. It separates things into:
   Finds rebuildable project junk such as `target/`, `node_modules/`, `dist/`, `build/`, `.venv`, package caches, and tool caches.
 
 - **Recipe system**  
-  YAML-based cleaner rules for apps and tools. Community recipes can teach Nibble where safe cache lives.
+  YAML-based cleaner rules for apps and tools. Community recipes can teach Nibs where safe cache lives.
 
 - **Scriptable output**  
   JSON reports and dry runs for automation, debugging, and review.
@@ -88,7 +88,7 @@ cargo install nibs
 **Via precompiled binary script (Linux x86_64/ARM64):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danitsdev/nibble/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/danitsdev/nibs/main/install.sh | bash
 ```
 
 ### Run
@@ -126,7 +126,7 @@ nibs deep --json             # JSON Deep Clean report
 nibs clean
 ```
 
-Nibble scans common cleanup locations and shows something like:
+Nibs scans common cleanup locations and shows something like:
 
 ```txt
 Smart Clean complete
@@ -146,7 +146,7 @@ Protected data           skipped
 [ ] risky     Browser sessions                   protected
 ```
 
-Press clean, confirm, and Nibble moves selected files to Trash.
+Press clean, confirm, and Nibs moves selected files to Trash.
 
 ```txt
 Clean complete
@@ -172,11 +172,11 @@ Can restore from        ~/.local/share/Trash
 
 ## Safety Model
 
-Nibble is conservative by default.
+Nibs is conservative by default.
 
 It avoids permanent deletion unless you explicitly enable it.
 
-By default, Nibble protects:
+By default, Nibs protects:
 
 * passwords, tokens, credentials, and API keys
 * browser sessions, cookies, and login state
@@ -186,7 +186,7 @@ By default, Nibble protects:
 * personal files such as documents, photos, videos, and save files
 * symlinks and protected system paths
 
-When Nibble is unsure, it marks the item as **review**, **risky**, or **protected** instead of cleaning it automatically.
+When Nibs is unsure, it marks the item as **review**, **risky**, or **protected** instead of cleaning it automatically.
 
 ```txt
 safe      selected by default
@@ -199,7 +199,7 @@ protected never cleaned by normal actions
 
 ## Trash-first by Default
 
-Nibble moves files to the system Trash by default.
+Nibs moves files to the system Trash by default.
 
 That means the normal cleanup path is recoverable:
 
@@ -207,7 +207,7 @@ That means the normal cleanup path is recoverable:
 nibs trash
 ```
 
-Use it to review, restore, or permanently empty files moved by Nibble.
+Use it to review, restore, or permanently empty files moved by Nibs.
 
 Direct deletion can be enabled later, but Trash mode is the recommended default.
 
@@ -267,7 +267,7 @@ Useful for checking build artifacts, generated folders, and cache directories in
 
 ## Cleaner Recipes
 
-Nibble learns cleanup rules through recipes.
+Nibs learns cleanup rules through recipes.
 
 Generic rules live in:
 
@@ -293,7 +293,7 @@ This path may contain secrets.
 Never clean this by default.
 ```
 
-That lets Nibble support more apps over time without hardcoding every cleaner into the core.
+That lets Nibs support more apps over time without hardcoding every cleaner into the core.
 
 Examples of recipe areas:
 
@@ -318,7 +318,7 @@ Before adding recipes, read:
 
 ## Project Status
 
-Nibble is currently an early Linux alpha.
+Nibs is currently an early Linux alpha.
 
 The core cleanup model is intentionally strict. Some cleaners may find less than expected, but they should not delete broadly or guess dangerously.
 
@@ -372,7 +372,7 @@ cargo test
 
 ## Inspired By
 
-Nibble is inspired by tools like Mole, CleanMyMac, AppCleaner, DaisyDisk, ncdu, and modern terminal assistants.
+Nibs is inspired by tools like Mole, CleanMyMac, AppCleaner, DaisyDisk, ncdu, and modern terminal assistants.
 
 The goal is different:
 

@@ -31,4 +31,4 @@ items:
       - "**/.local/share/TelegramDesktop/tdata/key_data"
       - "**/.local/share/TelegramDesktop/tdata/settings"
       - "**/.local/share/TelegramDesktop/tdata/user_data"
-    reason: "Telegram tdata contains account state, chat metadata, and local application state. Nibble must not clean it automatically."
+    reason: "Telegram tdata contains account state, chat metadata, and local application state. Nibs must not clean it automatically."

@@ -32,4 +32,4 @@ items:
       - "**/.config/Figma/Cookies"
       - "**/.config/Figma/Local Storage"
       - "**/.config/Figma/Session Storage"
-    reason: "Figma identity storage can contain login state and account-linked data. Nibble must not clean it by default."
+    reason: "Figma identity storage can contain login state and account-linked data. Nibs must not clean it by default."

@@ -38,4 +38,4 @@ items:
     paths:
       - "**/Documents/Zoom"
       - "**/Downloads/zoom_*.mp4"
-    reason: "Zoom recordings are user-created meeting audio and video files. Nibble reports them only as protected user data."
+    reason: "Zoom recordings are user-created meeting audio and video files. Nibs reports them only as protected user data."

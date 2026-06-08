@@ -120,7 +120,7 @@ impl CleanerDetect {
 pub fn load_all_cleaner_rules() -> Vec<Rule> {
     let mut rules = load_embedded_cleaner_rules();
 
-    if let Ok(extra_dir) = std::env::var("NIBBLE_CLEANERS_DIR") {
+    if let Ok(extra_dir) = std::env::var("NIBS_CLEANERS_DIR") {
         let extra_dir = Path::new(&extra_dir);
         match load_cleaner_rules_from_dir(extra_dir) {
             Ok(mut local_rules) => {
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn detected_recipe_becomes_rules() {
-        let marker = std::env::temp_dir().join("nibble_recipe_detected_marker");
+        let marker = std::env::temp_dir().join("nibs_recipe_detected_marker");
         let _ = std::fs::remove_dir_all(&marker);
         std::fs::create_dir_all(&marker).unwrap();
 
@@ -353,7 +353,7 @@ items:
 
     #[test]
     fn undetected_recipe_is_skipped() {
-        let missing = std::env::temp_dir().join("nibble_recipe_missing_marker");
+        let missing = std::env::temp_dir().join("nibs_recipe_missing_marker");
         let _ = std::fs::remove_dir_all(&missing);
         let source = format!(
             r#"

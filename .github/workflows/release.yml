@@ -37,7 +37,7 @@ jobs:
       - name: Package Assets
         run: |
           TAG_NAME="${{ github.ref_name }}"
-          PKG_DIR="nibble-${TAG_NAME}"
+          PKG_DIR="nibs-${TAG_NAME}"
           mkdir -p "${PKG_DIR}"
           
           # Copy target files
@@ -45,7 +45,7 @@ jobs:
           cp README.md LICENSE "${PKG_DIR}/"
           
           # Create archive
-          TARBALL="nibble-${TAG_NAME}-${{ matrix.asset_name }}.tar.gz"
+          TARBALL="nibs-${TAG_NAME}-${{ matrix.asset_name }}.tar.gz"
           tar -czvf "${TARBALL}" "${PKG_DIR}"
           
           echo "TARBALL_PATH=${TARBALL}" >> $GITHUB_ENV

@@ -28,4 +28,4 @@ items:
     paths:
       - "**/.config/blender"
       - "**/.var/app/org.blender.Blender/config/blender"
-    reason: "Blender configuration stores preferences, startup files, add-ons, and local workflow state. Nibble reports it only as protected user data."
+    reason: "Blender configuration stores preferences, startup files, add-ons, and local workflow state. Nibs reports it only as protected user data."

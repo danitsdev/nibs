@@ -35,4 +35,4 @@ items:
       - "**/.config/vivaldi/*/Cookies"
       - "**/.config/vivaldi/*/History"
       - "**/.config/vivaldi/*/Preferences"
-    reason: "Vivaldi profile databases can contain credentials, cookies, history, and browser preferences. Nibble only reports them as protected data."
+    reason: "Vivaldi profile databases can contain credentials, cookies, history, and browser preferences. Nibs only reports them as protected data."

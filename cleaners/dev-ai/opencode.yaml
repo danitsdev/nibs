@@ -40,4 +40,4 @@ items:
     paths:
       - "**/.config/opencode"
       - "**/.opencode"
-    reason: "OpenCode configuration may contain provider settings, credentials, and user preferences. Nibble keeps it protected."
+    reason: "OpenCode configuration may contain provider settings, credentials, and user preferences. Nibs keeps it protected."

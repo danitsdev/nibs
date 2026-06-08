@@ -28,4 +28,4 @@ items:
     paths:
       - "**/.config/inkscape"
       - "**/.var/app/org.inkscape.Inkscape/config/inkscape"
-    reason: "Inkscape configuration can contain preferences, extensions, templates, palettes, and user workflow state. Nibble reports it only as protected user data."
+    reason: "Inkscape configuration can contain preferences, extensions, templates, palettes, and user workflow state. Nibs reports it only as protected user data."

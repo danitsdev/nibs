@@ -27,6 +27,6 @@ items:
     default_action: review
     paths:
       - "**/.npm/_npx"
-    reason: "npx cache contains temporary command installs. It is rebuildable, but Nibble does not yet know which commands produced each entry."
+    reason: "npx cache contains temporary command installs. It is rebuildable, but Nibs does not yet know which commands produced each entry."
     restore:
       - "npx <command>"

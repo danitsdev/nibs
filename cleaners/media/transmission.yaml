@@ -29,4 +29,4 @@ items:
       - "**/.config/transmission/torrents"
       - "**/.var/app/com.transmissionbt.Transmission/config/transmission/resume"
       - "**/.var/app/com.transmissionbt.Transmission/config/transmission/torrents"
-    reason: "Transmission torrent and resume metadata controls active torrent state. Cleaning it can lose torrent tracking state, so Nibble must not clean it by default."
+    reason: "Transmission torrent and resume metadata controls active torrent state. Cleaning it can lose torrent tracking state, so Nibs must not clean it by default."

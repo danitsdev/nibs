@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_empty_trash_directory() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_trash_empty");
+        let temp_dir = std::env::temp_dir().join("nibs_test_trash_empty");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 

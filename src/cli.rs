@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(
     name = "nibs",
-    author = "Nibble contributors",
+    author = "Nibs contributors",
     version,
     about = "A safe, Rust-powered terminal cleaner for Linux developers."
 )]

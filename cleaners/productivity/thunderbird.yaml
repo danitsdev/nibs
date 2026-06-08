@@ -49,4 +49,4 @@ items:
       - "**/.mozilla-thunderbird/*/key4.db"
       - "**/.mozilla-thunderbird/*/cookies.sqlite"
       - "**/.mozilla-thunderbird/*/prefs.js"
-    reason: "Thunderbird profile databases can contain mail account credentials, cookies, account settings, and preferences. Nibble must not clean these by default."
+    reason: "Thunderbird profile databases can contain mail account credentials, cookies, account settings, and preferences. Nibs must not clean these by default."

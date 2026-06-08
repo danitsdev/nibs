@@ -27,7 +27,7 @@
   patterns:
     - "**/.local/share/docker/volumes"
     - "**/var/lib/docker/volumes"
-  reason: "Docker volumes often contain databases, uploads, local development state, and other non-rebuildable data. Nibble must never clean Docker volumes automatically."
+  reason: "Docker volumes often contain databases, uploads, local development state, and other non-rebuildable data. Nibs must never clean Docker volumes automatically."
   default_action: never
   safety_class: user_data
 
@@ -48,7 +48,7 @@
   risk: risky
   patterns:
     - "**/.local/share/containers/storage/volumes"
-  reason: "Podman volumes may contain databases, uploads, and local development state. Nibble must never clean container volumes automatically."
+  reason: "Podman volumes may contain databases, uploads, and local development state. Nibs must never clean container volumes automatically."
   default_action: never
   safety_class: user_data
 

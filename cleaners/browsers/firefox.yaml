@@ -45,4 +45,4 @@ items:
       - "**/.mozilla/firefox/*/cookies.sqlite"
       - "**/.mozilla/firefox/*/places.sqlite"
       - "**/.mozilla/firefox/*/prefs.js"
-    reason: "Firefox profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibble must not clean these by default."
+    reason: "Firefox profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibs must not clean these by default."

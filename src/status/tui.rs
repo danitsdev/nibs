@@ -290,7 +290,7 @@ fn draw_status(stats: &SystemStats, elapsed_ms: u64, frame: &mut Frame) {
     let header_lines = vec![
         Line::from(vec![
             Span::styled(
-                " Nibble System Telemetry Dashboard ",
+                " Nibs System Telemetry Dashboard ",
                 Style::default()
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),

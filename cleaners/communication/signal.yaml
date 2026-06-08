@@ -35,4 +35,4 @@ items:
       - "**/.config/Signal/Local Storage"
       - "**/.config/Signal/Session Storage"
       - "**/.config/Signal/Cookies"
-    reason: "Signal local databases and identity files can contain encrypted message data, keys, linked-device state, and account state. Nibble must not clean them by default."
+    reason: "Signal local databases and identity files can contain encrypted message data, keys, linked-device state, and account state. Nibs must not clean them by default."

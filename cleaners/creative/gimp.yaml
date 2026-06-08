@@ -36,4 +36,4 @@ items:
       - "**/.var/app/org.gimp.GIMP/config/GIMP/*/palettes"
       - "**/.var/app/org.gimp.GIMP/config/GIMP/*/plug-ins"
       - "**/.var/app/org.gimp.GIMP/config/GIMP/*/scripts"
-    reason: "GIMP profile resources may contain user-created brushes, scripts, plug-ins, and palettes. Nibble must not clean them by default."
+    reason: "GIMP profile resources may contain user-created brushes, scripts, plug-ins, and palettes. Nibs must not clean them by default."

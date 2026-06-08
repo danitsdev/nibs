@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_detection() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_duplicates");
+        let temp_dir = std::env::temp_dir().join("nibs_test_duplicates");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 
@@ -361,7 +361,7 @@ mod tests {
     fn test_min_age_filtering() {
         use crate::findings::FindingCategory;
 
-        let temp_dir = std::env::temp_dir().join("nibble_test_age");
+        let temp_dir = std::env::temp_dir().join("nibs_test_age");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 
@@ -410,7 +410,7 @@ mod tests {
     fn test_min_size_filtering() {
         use crate::findings::FindingCategory;
 
-        let temp_dir = std::env::temp_dir().join("nibble_test_min_size");
+        let temp_dir = std::env::temp_dir().join("nibs_test_min_size");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 
@@ -452,7 +452,7 @@ mod tests {
     fn test_whitelist_filtering() {
         use crate::findings::FindingCategory;
 
-        let temp_dir = std::env::temp_dir().join("nibble_test_whitelist");
+        let temp_dir = std::env::temp_dir().join("nibs_test_whitelist");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 

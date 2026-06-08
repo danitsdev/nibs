@@ -16,4 +16,4 @@ items:
     paths:
       - "**/.gemini"
       - "**/.config/gemini"
-    reason: "Gemini CLI configuration may contain authentication state, preferences, provider configuration, or API keys. Nibble does not auto-clean it."
+    reason: "Gemini CLI configuration may contain authentication state, preferences, provider configuration, or API keys. Nibs does not auto-clean it."

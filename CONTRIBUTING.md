@@ -1,8 +1,8 @@
-# Contributing to Nibble
+# Contributing to Nibs
 
-Thanks for helping make Nibble safer and more useful.
+Thanks for helping make Nibs safer and more useful.
 
-Nibble touches local files, so safety is more important than aggressive cleanup. When in doubt, report, explain, or require review instead of deleting more.
+Nibs touches local files, so safety is more important than aggressive cleanup. When in doubt, report, explain, or require review instead of deleting more.
 
 ## Setup
 

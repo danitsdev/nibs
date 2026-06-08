@@ -1,7 +1,7 @@
 use crate::findings::Finding;
 use crate::safety::ScanScope;
 use crate::scanner::ScanWarning;
-use crate::theme::NibbleTheme;
+use crate::theme::NibsTheme;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -159,7 +159,7 @@ pub struct TuiState {
     // Settings state
     pub delete_directly: bool,
     pub shred: bool,
-    pub theme: &'static NibbleTheme,
+    pub theme: &'static NibsTheme,
     pub settings_cursor_idx: usize,
     pub confirm_idx: usize,
 

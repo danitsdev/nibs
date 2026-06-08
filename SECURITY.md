@@ -1,6 +1,6 @@
 # Security Policy
 
-Nibble is a local cleanup tool. Bugs in path validation, cleanup boundaries, symlink handling, Trash routing, or privilege behavior can cause real data loss, so security-sensitive reports should be handled carefully.
+Nibs is a local cleanup tool. Bugs in path validation, cleanup boundaries, symlink handling, Trash routing, or privilege behavior can cause real data loss, so security-sensitive reports should be handled carefully.
 
 ## Reporting A Vulnerability
 
@@ -10,7 +10,7 @@ Use GitHub private vulnerability reporting once it is enabled for the repository
 
 Include:
 
-- Nibble version or commit
+- Nibs version or commit
 - Linux distribution and version
 - Exact command or workflow
 - Reproduction steps

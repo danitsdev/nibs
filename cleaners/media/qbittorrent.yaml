@@ -31,4 +31,4 @@ items:
       - "**/.local/share/data/qBittorrent/BT_backup"
       - "**/.local/share/qBittorrent/BT_backup"
       - "**/.var/app/org.qbittorrent.qBittorrent/data/qBittorrent/BT_backup"
-    reason: "qBittorrent torrent and fastresume files control active torrent state. Cleaning them can lose torrent tracking state, so Nibble must not clean them by default."
+    reason: "qBittorrent torrent and fastresume files control active torrent state. Cleaning them can lose torrent tracking state, so Nibs must not clean them by default."

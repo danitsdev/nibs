@@ -1,7 +1,7 @@
 use ratatui::style::Color;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NibbleTheme {
+pub struct NibsTheme {
     pub name: &'static str,
     pub id: &'static str,
     pub neutral: Color,
@@ -16,8 +16,8 @@ pub struct NibbleTheme {
     pub select_bg: Color,
 }
 
-impl NibbleTheme {
-    pub fn next(self) -> &'static NibbleTheme {
+impl NibsTheme {
+    pub fn next(self) -> &'static NibsTheme {
         let themes = ALL_THEMES;
         let pos = themes.iter().position(|t| t.id == self.id);
         match pos {
@@ -27,7 +27,7 @@ impl NibbleTheme {
     }
 }
 
-pub const SYSTEM: NibbleTheme = NibbleTheme {
+pub const SYSTEM: NibsTheme = NibsTheme {
     name: "System (Terminal Default)",
     id: "system",
     neutral: Color::Reset,
@@ -42,7 +42,7 @@ pub const SYSTEM: NibbleTheme = NibbleTheme {
     select_bg: Color::Magenta,
 };
 
-pub const NORD: NibbleTheme = NibbleTheme {
+pub const NORD: NibsTheme = NibsTheme {
     name: "Nord",
     id: "nord",
     neutral: Color::Rgb(46, 52, 64),
@@ -57,7 +57,7 @@ pub const NORD: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(136, 192, 208),
 };
 
-pub const DRACULA: NibbleTheme = NibbleTheme {
+pub const DRACULA: NibsTheme = NibsTheme {
     name: "Dracula",
     id: "dracula",
     neutral: Color::Rgb(29, 30, 40),
@@ -72,7 +72,7 @@ pub const DRACULA: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(189, 147, 249),
 };
 
-pub const CATPPUCCIN: NibbleTheme = NibbleTheme {
+pub const CATPPUCCIN: NibsTheme = NibsTheme {
     name: "Catppuccin",
     id: "catppuccin",
     neutral: Color::Rgb(30, 30, 46),
@@ -87,7 +87,7 @@ pub const CATPPUCCIN: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(180, 190, 254),
 };
 
-pub const GRUVBOX: NibbleTheme = NibbleTheme {
+pub const GRUVBOX: NibsTheme = NibsTheme {
     name: "Gruvbox",
     id: "gruvbox",
     neutral: Color::Rgb(40, 40, 40),
@@ -102,7 +102,7 @@ pub const GRUVBOX: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(131, 165, 152),
 };
 
-pub const TOKYONIGHT: NibbleTheme = NibbleTheme {
+pub const TOKYONIGHT: NibsTheme = NibsTheme {
     name: "Tokyo Night",
     id: "tokyonight",
     neutral: Color::Rgb(26, 27, 38),
@@ -117,7 +117,7 @@ pub const TOKYONIGHT: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(122, 162, 247),
 };
 
-pub const ONE_DARK: NibbleTheme = NibbleTheme {
+pub const ONE_DARK: NibsTheme = NibsTheme {
     name: "One Dark",
     id: "one-dark",
     neutral: Color::Rgb(40, 44, 52),
@@ -132,7 +132,7 @@ pub const ONE_DARK: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(97, 175, 239),
 };
 
-pub const SOLARIZED: NibbleTheme = NibbleTheme {
+pub const SOLARIZED: NibsTheme = NibsTheme {
     name: "Solarized Dark",
     id: "solarized",
     neutral: Color::Rgb(0, 43, 54),
@@ -147,7 +147,7 @@ pub const SOLARIZED: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(108, 113, 196),
 };
 
-pub const MONOKAI: NibbleTheme = NibbleTheme {
+pub const MONOKAI: NibsTheme = NibsTheme {
     name: "Monokai",
     id: "monokai",
     neutral: Color::Rgb(39, 40, 34),
@@ -162,7 +162,7 @@ pub const MONOKAI: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(174, 129, 255),
 };
 
-pub const EVERFOREST: NibbleTheme = NibbleTheme {
+pub const EVERFOREST: NibsTheme = NibsTheme {
     name: "Everforest",
     id: "everforest",
     neutral: Color::Rgb(45, 53, 59),
@@ -177,7 +177,7 @@ pub const EVERFOREST: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(167, 192, 128),
 };
 
-pub const KANAGAWA: NibbleTheme = NibbleTheme {
+pub const KANAGAWA: NibsTheme = NibsTheme {
     name: "Kanagawa",
     id: "kanagawa",
     neutral: Color::Rgb(31, 31, 40),
@@ -192,7 +192,7 @@ pub const KANAGAWA: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(126, 156, 216),
 };
 
-pub const ROSE_PINE: NibbleTheme = NibbleTheme {
+pub const ROSE_PINE: NibsTheme = NibsTheme {
     name: "Rose Pine",
     id: "rosepine",
     neutral: Color::Rgb(25, 23, 36),
@@ -207,7 +207,7 @@ pub const ROSE_PINE: NibbleTheme = NibbleTheme {
     select_bg: Color::Rgb(156, 207, 216),
 };
 
-pub const ALL_THEMES: &[NibbleTheme] = &[
+pub const ALL_THEMES: &[NibsTheme] = &[
     SYSTEM, NORD, DRACULA, CATPPUCCIN, GRUVBOX, TOKYONIGHT, ONE_DARK, SOLARIZED, MONOKAI,
     EVERFOREST, KANAGAWA, ROSE_PINE,
 ];

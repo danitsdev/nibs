@@ -1,14 +1,14 @@
-# Nibble Agent Guide
+# Nibs Agent Guide
 
-This file is the shared source of truth for humans and AI agents working on Nibble. Put machine-specific notes in `AGENTS.local.md`; it is gitignored.
+This file is the shared source of truth for humans and AI agents working on Nibs. Put machine-specific notes in `AGENTS.local.md`; it is gitignored.
 
 ## Project Standard
 
-Nibble is a safe, Rust-powered terminal cleaner for Linux developers. It finds rebuildable development junk, generated artifacts, app caches, temporary files, app remnants, duplicate candidates, and recoverable disk waste, then explains what it found before anything is cleaned.
+Nibs is a safe, Rust-powered terminal cleaner for Linux developers. It finds rebuildable development junk, generated artifacts, app caches, temporary files, app remnants, duplicate candidates, and recoverable disk waste, then explains what it found before anything is cleaned.
 
 Core promise:
 
-> Nibble never guesses. It explains before it cleans.
+> Nibs never guesses. It explains before it cleans.
 
 The public bar is a focused, contributor-friendly project in the spirit of tools like Mole: clear command surface, fast workflows, strong safety defaults, readable docs, and a cleaner catalog that is easy to audit.
 
@@ -94,7 +94,7 @@ Every cleanup rule or cleaner item needs:
 
 Use `safe` only for data that is clearly rebuildable or disposable. Use `review`, `risky`, or `info` when user judgment is needed. Keep sensitive children as separate protected findings instead of matching a broad parent directory.
 
-Research from Mole, BleachBit, CleanerML, app docs, desktop files, and package layouts is useful, but do not vendor comparison projects, downloaded binaries, or copied cleaner definitions into this repo. Translate ideas into Nibble's Linux-first schema and safety model.
+Research from Mole, BleachBit, CleanerML, app docs, desktop files, and package layouts is useful, but do not vendor comparison projects, downloaded binaries, or copied cleaner definitions into this repo. Translate ideas into Nibs's Linux-first schema and safety model.
 
 ## Working Rules
 

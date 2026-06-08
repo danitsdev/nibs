@@ -71,4 +71,4 @@ items:
       - "**/snap/chromium/common/chromium/*/Login Data"
       - "**/snap/chromium/common/chromium/*/Cookies"
       - "**/snap/chromium/common/chromium/*/History"
-    reason: "Chromium profile databases can contain credentials, cookies, history, and account-linked state. Nibble only reports them as protected data."
+    reason: "Chromium profile databases can contain credentials, cookies, history, and account-linked state. Nibs only reports them as protected data."

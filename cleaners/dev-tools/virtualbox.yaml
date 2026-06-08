@@ -29,4 +29,4 @@ items:
     paths:
       - "**/VirtualBox VMs"
       - "**/.VirtualBox/Machines"
-    reason: "VirtualBox virtual machine folders can contain disk images, snapshots, and user-created machine state. Nibble must not clean them automatically."
+    reason: "VirtualBox virtual machine folders can contain disk images, snapshots, and user-created machine state. Nibs must not clean them automatically."

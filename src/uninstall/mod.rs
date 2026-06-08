@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_find_app_remnants() {
-        let temp_dir = std::env::temp_dir().join("nibble_test_uninstall");
+        let temp_dir = std::env::temp_dir().join("nibs_test_uninstall");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
 
