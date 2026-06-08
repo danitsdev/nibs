@@ -1,44 +1,333 @@
-# Nibble
-
-<p align="center">
-  <strong>A safe, Linux-first terminal cleaner for developers.</strong>
-</p>
+<div align="center">
+  <h1>Nibble</h1>
+  <p><em>🐭 Free up space on Linux without deleting the wrong things.</em></p>
+</div>
 
 <p align="center">
   <a href="https://github.com/danitsdev/nibble/stargazers"><img src="https://img.shields.io/github/stars/danitsdev/nibble?style=flat-square" alt="GitHub stars"></a>
-  <a href="https://github.com/danitsdev/nibble/commits/main"><img src="https://img.shields.io/github/commit-activity/m/danitsdev/nibble?style=flat-square" alt="Commit activity"></a>
+  <a href="https://github.com/danitsdev/nibble/releases"><img src="https://img.shields.io/github/v/tag/danitsdev/nibble?label=version&style=flat-square" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://github.com/danitsdev/nibble/actions"><img src="https://img.shields.io/github/actions/workflow/status/danitsdev/nibble/ci.yml?branch=main&style=flat-square" alt="CI status"></a>
 </p>
 
-Nibble is a Rust-powered terminal app that finds rebuildable junk, generated artifacts, app caches, old project dependencies, local tool caches, recoverable disk waste, and risky leftovers before anything is cleaned.
+<p align="center">
+  <strong>Clean caches, logs, installers, project builds, app leftovers, Trash, and other reclaimable junk from a friendly terminal UI.</strong>
+</p>
 
-> Nibble never guesses. It explains before it cleans.
+<p align="center">
+  <code>nibs</code> sniffs junk, explains what it found, and skips secrets by default.
+</p>
 
-The project is strongly inspired by [tw93/Mole](https://github.com/tw93/Mole): fast terminal workflows, practical cleanup commands, delightful presentation, and safety-first maintenance tooling. Nibble takes that spirit in a Linux-focused direction with Trash-first cleanup, explicit risk labels, JSON reports, readable YAML rules, and conservative handling for Docker, SDKs, secrets, databases, and user data.
+---
 
-Nibble is currently an early Linux preview. It is open to contributions across cleaner recipes, Linux distro support, app detection, documentation, TUI design, screenshots, release packaging, tests, and safety review.
+## Why Nibble?
 
-## What It Does
+Your Linux machine can lose tens or hundreds of gigabytes to boring junk:
 
-- **Smart Clean**: quick daily scan for safe, boring, rebuildable cleanup targets.
-- **Deep Clean**: review-first scan for old or heavy data such as Docker state, Android SDK versions, local AI models, game runtimes, installers, large downloads, and duplicate files.
-- **Analyze Disk**: ncdu-style folder explorer for manual inspection.
-- **Apps & Leftovers**: inspect app remnants before trashing them.
-- **Status & Doctor**: local storage, Docker, package-cache, journal, and environment checks.
-- **Cleaner Recipes**: app/tool-specific YAML recipes that activate only when the app is detected.
-- **JSON Reports**: script-friendly output for automation and review.
-- **Trash-first Cleanup**: recoverable cleanup by default instead of permanent deletion.
+- old package downloads
+- app caches
+- browser caches
+- logs and crash reports
+- Trash
+- `.rpm`, `.deb`, `.AppImage`, `.tar.gz` installers
+- `target/`, `node_modules/`, `dist/`, `build/`, `.venv`
+- Docker/Podman leftovers
+- old SDKs, emulators, game caches, and local AI model stores
+- files left behind by apps that are no longer installed
 
-## Installation
+Nibble helps you find that space quickly.
 
-Install the precompiled binary directly (Linux x86_64):
+It does **not** blindly delete your home folder. It separates things into:
+
+- **safe** — boring rebuildable junk selected by default
+- **review** — large things worth checking first
+- **risky** — configs, sessions, credentials, memories, and personal data kept protected
+
+> Nibble is built for the moment when your disk is full and you want 10–50 GB back without fear.
+
+---
+
+## Features
+
+- **Smart Clean**  
+  Fast general cleanup for app caches, package caches, logs, Trash, installers, and generated files.
+
+- **Deep Clean**  
+  Finds bigger review-only targets: Docker data, old downloads, local AI models, game caches, SDKs, duplicate files, and old project artifacts.
+
+- **Trash-first cleanup**  
+  Moves files to Trash by default, so cleanup is recoverable before permanent deletion.
+
+- **App leftovers**  
+  Detects apps, caches, config folders, desktop entries, and remnants from apps that may no longer be installed.
+
+- **Disk analyzer**  
+  ncdu-style explorer for manually finding what is using your storage.
+
+- **Developer cleanup**  
+  Finds rebuildable project junk such as `target/`, `node_modules/`, `dist/`, `build/`, `.venv`, package caches, and tool caches.
+
+- **Recipe system**  
+  YAML-based cleaner rules for apps and tools. Community recipes can teach Nibble where safe cache lives.
+
+- **Scriptable output**  
+  JSON reports and dry runs for automation, debugging, and review.
+
+---
+
+## Quick Start
+
+### Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/danitsdev/nibble/main/install.sh | bash
 ```
 
-Or build from source:
+### Run
+
+```bash
+nibs
+```
+
+That opens the interactive terminal UI.
+
+### Common commands
+
+```bash
+nibs                         # Open the interactive UI
+nibs clean                   # Smart Clean
+nibs clean --dry-run         # Preview safe cleanup
+nibs clean --no-tui          # Print Smart Clean results in the terminal
+
+nibs deep                    # Find large review-only cleanup targets
+nibs analyze ~/Downloads     # Explore disk usage manually
+nibs apps                    # Inspect apps and leftovers
+nibs trash                   # Review, restore, or empty Trash
+nibs status                  # Live system dashboard
+nibs doctor                  # Check environment, distro, tools, and cleanup support
+
+nibs scan . --json           # JSON scan report for a path
+nibs deep --json             # JSON Deep Clean report
+```
+
+---
+
+## The Main Flow
+
+```bash
+nibs clean
+```
+
+Nibble scans common cleanup locations and shows something like:
+
+```txt
+Smart Clean complete
+
+Recommended cleanup     14.2 GiB
+Maximum possible         31.8 GiB
+Needs review             17.6 GiB
+Protected data           skipped
+
+[x] safe      App caches                         3.2 GiB
+[x] safe      Package manager cache              2.1 GiB
+[x] safe      Logs and crash reports             820 MiB
+[x] safe      Project build folders              5.8 GiB
+[ ] review    Docker unused data                 6.4 GiB
+[ ] review    Old installers                     1.2 GiB
+[ ] review    Large downloads                    8.1 GiB
+[ ] risky     Browser sessions                   protected
+```
+
+Press clean, confirm, and Nibble moves selected files to Trash.
+
+```txt
+Clean complete
+
+Moved to Trash          14.2 GiB
+Files moved             18,420
+Risky items touched     0
+Can restore from        ~/.local/share/Trash
+```
+
+---
+
+## Smart Clean vs Deep Clean
+
+| Command        | Use it when                                                    | Behavior                                                                  |
+| :------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `nibs clean`   | You want space back quickly.                                   | Selects safe, boring, rebuildable junk by default.                        |
+| `nibs deep`    | Your disk is still full and you want to investigate big stuff. | Finds large review-only targets. Nothing risky is selected automatically. |
+| `nibs analyze` | You want to manually walk through folders.                     | Shows what is using space and lets you inspect paths yourself.            |
+| `nibs apps`    | You want to clean app caches, leftovers, or remove apps.       | Shows app data separately from protected configs/sessions.                |
+
+---
+
+## Safety Model
+
+Nibble is conservative by default.
+
+It avoids permanent deletion unless you explicitly enable it.
+
+By default, Nibble protects:
+
+* passwords, tokens, credentials, and API keys
+* browser sessions, cookies, and login state
+* app preferences and personal configuration
+* AI agent memories and project instructions
+* databases and unknown stateful directories
+* personal files such as documents, photos, videos, and save files
+* symlinks and protected system paths
+
+When Nibble is unsure, it marks the item as **review**, **risky**, or **protected** instead of cleaning it automatically.
+
+```txt
+safe      selected by default
+review    shown, but not selected
+risky     blocked unless explicitly reviewed
+protected never cleaned by normal actions
+```
+
+---
+
+## Trash-first by Default
+
+Nibble moves files to the system Trash by default.
+
+That means the normal cleanup path is recoverable:
+
+```bash
+nibs trash
+```
+
+Use it to review, restore, or permanently empty files moved by Nibble.
+
+Direct deletion can be enabled later, but Trash mode is the recommended default.
+
+---
+
+## Examples
+
+### Clean safe system junk
+
+```bash
+nibs clean
+```
+
+Finds safe cleanup targets such as caches, logs, package downloads, Trash, installers, and generated files.
+
+### Preview before cleaning
+
+```bash
+nibs clean --dry-run
+```
+
+Shows what would be cleaned without moving anything.
+
+### Find what is still eating space
+
+```bash
+nibs deep
+```
+
+Looks for larger review-only targets such as Docker storage, old downloads, local models, SDKs, games, and project artifacts.
+
+### Explore a folder manually
+
+```bash
+nibs analyze ~/Downloads
+```
+
+Opens an ncdu-style disk explorer.
+
+### Inspect app leftovers
+
+```bash
+nibs apps
+```
+
+Shows installed apps, app caches, configs, desktop files, and possible remnants.
+
+### Scan a project
+
+```bash
+nibs scan . --json
+```
+
+Useful for checking build artifacts, generated folders, and cache directories in a project.
+
+---
+
+## Cleaner Recipes
+
+Nibble learns cleanup rules through recipes.
+
+Generic rules live in:
+
+```txt
+rules/
+```
+
+App and tool-specific cleaners live in:
+
+```txt
+cleaners/
+```
+
+Recipes can detect apps through commands, desktop files, known paths, package names, and config directories.
+
+A recipe can say:
+
+```txt
+This path is safe cache.
+This path is review-only.
+This path contains settings.
+This path may contain secrets.
+Never clean this by default.
+```
+
+That lets Nibble support more apps over time without hardcoding every cleaner into the core.
+
+Examples of recipe areas:
+
+* browsers
+* package managers
+* code editors
+* AI tools
+* Docker and Podman
+* games
+* media apps
+* communication apps
+* Flatpak, Snap, AppImage
+* creative tools
+* desktop apps
+
+Before adding recipes, read:
+
+* [cleaners/README.md](cleaners/README.md)
+* [AGENTS.md](AGENTS.md)
+
+---
+
+## Project Status
+
+Nibble is currently an early Linux alpha.
+
+The core cleanup model is intentionally strict. Some cleaners may find less than expected, but they should not delete broadly or guess dangerously.
+
+Good contributions right now:
+
+* cleaner recipes for popular Linux apps
+* distro-specific package cache support
+* Flatpak, Snap, AppImage, RPM, and DEB coverage
+* better app leftover detection
+* TUI layout and copy polish
+* screenshots and GIFs
+* release packaging
+* tests for Trash behavior, protected paths, symlinks, and rule loading
+
+---
+
+## Build from Source
 
 ```bash
 cargo build --release
@@ -49,88 +338,12 @@ During development:
 
 ```bash
 cargo run
+cargo run -- clean
 cargo run -- scan . --json
-cargo run -- deep --json
 make verify
 ```
 
-## Command Surface
-
-```bash
-nibs                         # Open the interactive home screen
-nibs clean                   # Smart Clean in the TUI
-nibs clean --no-tui          # Smart Clean as terminal output
-nibs clean --dry-run         # Preview recommended safe cleanup
-nibs scan . --json           # JSON report for a specific path
-
-nibs deep                    # Deep review scan of $HOME
-nibs deep ~/Projects         # Deep review scan of a specific path
-nibs deep --json             # JSON report for deep-review findings
-nibs deep --no-duplicates    # Faster deep scan without duplicate hashing
-
-nibs analyze ~/Downloads     # Manual disk explorer
-nibs status                  # Live system status dashboard
-nibs doctor                  # Environment and cache diagnostics
-nibs trash                   # Review, restore, or empty Trash
-nibs uninstall discord       # Inspect app remnants before cleanup
-```
-
-## Smart vs Deep
-
-| Profile | Purpose | Default cleanup behavior |
-| :--- | :--- | :--- |
-| Smart Clean | Fast daily cleanup for safe caches and generated files. | Auto-selects only `risk=safe`, `default_action=clean`, `safety_class=safe`. |
-| Deep Clean | Finds older, heavier, or more expensive data worth reviewing. | Selects nothing automatically. Review first. |
-| Analyze Disk | Manual exploration for unknown large folders. | User chooses paths manually. |
-
-Deep Clean defaults to a 7-day inactivity filter and includes heavier review-only rules. It can surface Docker and Podman storage, Android SDK components, AVDs, local AI model stores, old installers, large downloads, and exact duplicates, but protected findings remain blocked by `default_action=never`.
-
-## Safety Model
-
-Nibble is designed around conservative cleanup boundaries:
-
-- no permanent deletion by default
-- no broad unknown system cleanup
-- no automatic Docker or Podman volume deletion
-- no symlink following by default
-- no crossing filesystem boundaries during `/` scans by default
-- protected Linux paths are skipped
-- risky, duplicate, Docker, system, and unknown findings require review
-- every cleanup target must explain what it contains and how it can be restored when possible
-
-See the Safety Model section above and [AGENTS.md](AGENTS.md) for detailed clean-up boundaries.
-
-## Cleaner Catalog
-
-Generic rules live in [rules/](rules/). App/tool-specific cleaners live in [cleaners/](cleaners/) and activate through lightweight detection: commands, desktop files, and known paths.
-
-Current catalog areas include browsers, code editors, communication apps, creative tools, desktop apps, AI tools, developer tools, gaming, media, and productivity apps.
-
-Before adding a rule or cleaner, read:
-
-- [cleaners/README.md](cleaners/README.md)
-- [AGENTS.md](AGENTS.md) for core safety invariants
-
-## Project Status
-
-Nibble is usable for local testing and contributor feedback, but it is still pre-1.0. The core safety posture is intentionally strict; polish work is welcome before broader user-facing releases.
-
-Good next contributions:
-
-- cleaner recipes for popular Linux apps
-- safer app-detection patterns
-- Flatpak/Snap/AppImage coverage
-- TUI layout and interaction polish
-- screenshots, GIFs, and README presentation
-- release packaging and install docs
-- distro-specific cache behavior
-- tests for protected paths, Trash behavior, and rule loading
-
-## Contributing
-
-Contributions are welcome. Design improvements, presentation polish, cleaner recipes, app detection, docs, tests, and safety reviews are all useful.
-
-Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md). Pull requests touching cleanup sinks, protected paths, Trash routing, symlink handling, Docker/Podman behavior, app remnant discovery, or cleaner rules need careful review and tests.
+---
 
 ## Verification
 
@@ -138,7 +351,7 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md). Pull r
 make verify
 ```
 
-This runs:
+Runs:
 
 ```bash
 cargo fmt --check
@@ -147,6 +360,18 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 
+---
+
+## Inspired By
+
+Nibble is inspired by tools like Mole, CleanMyMac, AppCleaner, DaisyDisk, ncdu, and modern terminal assistants.
+
+The goal is different:
+
+> a Linux-first cleaner that is fast enough for normal users, careful enough for developers, and readable enough that you understand what will happen before anything moves.
+
+---
+
 ## License
 
-Nibble is released under the [MIT License](LICENSE).
+MIT License.
