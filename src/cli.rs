@@ -40,6 +40,10 @@ pub struct Cli {
     #[arg(long, default_value_t = false)]
     pub brute: bool,
 
+    /// Securely shred files by overwriting with zero bytes before deletion.
+    #[arg(long, default_value_t = false)]
+    pub shred: bool,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -80,6 +84,39 @@ pub enum Commands {
         /// Enable brute mode: scans restricted zones (like apt/pacman caches and logs) under root.
         #[arg(long, default_value_t = false)]
         brute: bool,
+
+        /// Securely shred files by overwriting with zero bytes before deletion.
+        #[arg(long, default_value_t = false)]
+        shred: bool,
+    },
+    /// Deep review scan for large, old, or expensive cleanup targets.
+    Deep {
+        /// The path to deep scan. Defaults to the user's home directory.
+        path: Option<PathBuf>,
+
+        /// Run in non-TUI mode, printing findings directly to standard output.
+        #[arg(long, default_value_t = false)]
+        no_tui: bool,
+
+        /// Execute a simulated dry-run cleanup. Deep mode does not auto-select review items.
+        #[arg(long, default_value_t = false)]
+        dry_run: bool,
+
+        /// Output findings in JSON format.
+        #[arg(long, default_value_t = false)]
+        json: bool,
+
+        /// Disable exact duplicate detection for a faster deep scan.
+        #[arg(long, default_value_t = false)]
+        no_duplicates: bool,
+
+        /// Minimum age of files/folders in days since last modified to consider them cleanable.
+        #[arg(long, default_value = "7")]
+        min_age: u64,
+
+        /// Minimum finding size in MiB. Deep mode defaults to 0 MiB to surface small-but-useful caches too.
+        #[arg(long, default_value = "0")]
+        min_size: u64,
     },
     /// Scan a directory for cleanable files and folders.
     Scan {
@@ -109,6 +146,10 @@ pub enum Commands {
         /// Enable brute mode: scans restricted zones (like apt/pacman caches and logs) under root.
         #[arg(long, default_value_t = false)]
         brute: bool,
+
+        /// Securely shred files by overwriting with zero bytes before deletion.
+        #[arg(long, default_value_t = false)]
+        shred: bool,
     },
     /// Interactive disk analyzer (ncdu/gdu style explorer).
     Analyze {
@@ -128,6 +169,8 @@ pub enum Commands {
     },
     /// Check system health, disk spaces, and cache sizes.
     Doctor,
+    /// Open the Trash Manager to review, restore or empty trashed files.
+    Trash,
 }
 
 #[derive(Debug, Clone)]
@@ -138,6 +181,7 @@ pub enum CliAction {
     Uninstall { app_name: String, dry_run: bool },
     Home,
     Doctor,
+    Trash,
 }
 
 #[derive(Debug, Clone)]
@@ -150,6 +194,27 @@ pub struct ScanConfig {
     pub min_age: u64,
     pub min_size: u64,
     pub brute: bool,
+    pub profile: ScanProfile,
+    pub shred: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScanProfile {
+    Smart,
+    Deep,
+}
+
+impl ScanProfile {
+    pub fn label(self) -> &'static str {
+        match self {
+            ScanProfile::Smart => "Smart Clean",
+            ScanProfile::Deep => "Deep Clean",
+        }
+    }
+
+    pub fn auto_selects_safe_items(self) -> bool {
+        matches!(self, ScanProfile::Smart)
+    }
 }
 
 impl Cli {
@@ -168,6 +233,7 @@ impl Cli {
                     min_age,
                     min_size,
                     brute,
+                    shred,
                 } => CliAction::Scan(ScanConfig {
                     path: path.unwrap_or_else(|| PathBuf::from(".")),
                     no_tui: no_tui || json,
@@ -177,6 +243,28 @@ impl Cli {
                     min_age,
                     min_size,
                     brute,
+                    profile: ScanProfile::Smart,
+                    shred,
+                }),
+                Commands::Deep {
+                    path,
+                    no_tui,
+                    dry_run,
+                    json,
+                    no_duplicates,
+                    min_age,
+                    min_size,
+                } => CliAction::Scan(ScanConfig {
+                    path: path.unwrap_or_else(default_deep_path),
+                    no_tui: no_tui || json,
+                    json,
+                    dry_run,
+                    detect_duplicates: !no_duplicates,
+                    min_age,
+                    min_size,
+                    brute: true,
+                    profile: ScanProfile::Deep,
+                    shred: false,
                 }),
                 Commands::Scan {
                     path,
@@ -186,6 +274,7 @@ impl Cli {
                     min_age,
                     min_size,
                     brute,
+                    shred,
                 } => {
                     CliAction::Scan(ScanConfig {
                         path: path.unwrap_or_else(|| PathBuf::from(".")),
@@ -196,6 +285,8 @@ impl Cli {
                         min_age,
                         min_size,
                         brute,
+                        profile: ScanProfile::Smart,
+                        shred,
                     })
                 }
                 Commands::Analyze { path } => CliAction::Analyze {
@@ -206,6 +297,7 @@ impl Cli {
                     CliAction::Uninstall { app_name, dry_run }
                 }
                 Commands::Doctor => CliAction::Doctor,
+                Commands::Trash => CliAction::Trash,
             }
         } else if cli.path.is_some()
             || cli.no_tui
@@ -215,6 +307,7 @@ impl Cli {
             || cli.min_age > 0
             || cli.min_size != 1
             || cli.brute
+            || cli.shred
         {
             let json = cli.json;
             let mut no_tui = cli.no_tui;
@@ -231,9 +324,17 @@ impl Cli {
                 min_age: cli.min_age,
                 min_size: cli.min_size,
                 brute: cli.brute,
+                profile: ScanProfile::Smart,
+                shred: cli.shred,
             })
         } else {
             CliAction::Home
         }
     }
+}
+
+fn default_deep_path() -> PathBuf {
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
 }

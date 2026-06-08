@@ -1,0 +1,46 @@
+id: opera
+name: Opera
+category: browser_cache
+platforms: [linux]
+detect:
+  commands: ["opera", "opera-beta", "opera-developer"]
+  desktop_files: ["*opera*.desktop"]
+  paths:
+    - "~/.config/opera"
+    - "~/.cache/opera"
+    - "~/snap/opera"
+    - "~/snap/opera-beta"
+items:
+  - id: web-cache
+    name: Opera web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/opera"
+      - "**/.config/opera/Cache"
+      - "**/.config/opera/Code Cache"
+      - "**/.config/opera/GPUCache"
+      - "**/.config/opera/ShaderCache"
+      - "**/.config/opera/Default/Cache"
+      - "**/.config/opera/Default/Code Cache"
+      - "**/.config/opera/Default/GPUCache"
+      - "**/snap/opera/common/.cache/opera"
+      - "**/snap/opera/common/.cache/mesa_shader_cache"
+      - "**/snap/opera/common/.cache/mesa_shader_cache_db"
+      - "**/snap/opera-beta/common/.cache/opera-beta"
+    reason: "Opera cache stores temporary web assets, compiled code cache, and GPU shader cache. Cleaning it does not remove bookmarks, passwords, cookies, extensions, or browser settings."
+
+  - id: profile-data
+    name: Opera profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/opera/Cookies"
+      - "**/.config/opera/Login Data"
+      - "**/.config/opera/History"
+      - "**/.config/opera/Default/Cookies"
+      - "**/.config/opera/Default/Login Data"
+      - "**/.config/opera/Default/History"
+    reason: "Opera profile databases can contain credentials, cookies, browsing history, and account-linked state. Nibble must not clean them by default."

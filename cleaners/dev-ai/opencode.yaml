@@ -2,38 +2,35 @@ id: opencode
 name: OpenCode
 category: dev_ai_agent
 platforms: [linux]
-running: ["opencode"]
+detect:
+  commands: ["opencode"]
+  paths:
+    - "~/.config/opencode"
+    - "~/.local/share/opencode"
+    - "~/.cache/opencode"
+    - "~/.opencode"
 items:
   - id: logs
     name: OpenCode logs
     risk: safe
     safety_class: safe
     default_action: clean
-    block_if_running: true
     paths:
       - "**/.cache/opencode/logs"
       - "**/.local/state/opencode/logs"
       - "**/.local/share/opencode/logs"
     reason: "OpenCode logs are diagnostic output. Cleaning them should not remove provider credentials, settings, session history, or project files."
-    kept:
-      - "provider credentials"
-      - "settings"
-      - "session history"
 
   - id: session-state
     name: OpenCode session state
     risk: review
     safety_class: user_data
     default_action: review
-    block_if_running: true
     paths:
       - "**/.local/share/opencode/sessions"
       - "**/.config/opencode/sessions"
       - "**/.cache/opencode/sessions"
     reason: "OpenCode sessions may contain prompts, code context, responses, tool output, and provider-specific state. Review before cleaning."
-    kept:
-      - "settings"
-      - "provider credentials"
 
   - id: config-auth
     name: OpenCode configuration and provider auth
@@ -44,5 +41,3 @@ items:
       - "**/.config/opencode"
       - "**/.opencode"
     reason: "OpenCode configuration may contain provider settings, credentials, and user preferences. Nibble keeps it protected."
-    kept:
-      - "all OpenCode credentials and settings"

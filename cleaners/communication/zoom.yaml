@@ -1,0 +1,41 @@
+id: zoom
+name: Zoom
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["zoom", "zoom-client"]
+  desktop_files: ["*zoom*.desktop"]
+  paths:
+    - "~/.zoom"
+    - "~/.cache/zoom"
+    - "~/snap/zoom-client"
+items:
+  - id: app-cache
+    name: Zoom app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/zoom"
+      - "**/snap/zoom-client/common/.cache"
+    reason: "Zoom cache stores temporary UI and meeting client cache files. Cleaning it does not remove account settings or recorded meetings."
+
+  - id: logs
+    name: Zoom logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.zoom/logs"
+      - "**/snap/zoom-client/*/.zoom/logs"
+    reason: "Zoom logs are diagnostic output. Cleaning them does not remove account settings or recorded meetings."
+
+  - id: recordings
+    name: Zoom recordings
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/Documents/Zoom"
+      - "**/Downloads/zoom_*.mp4"
+    reason: "Zoom recordings are user-created meeting audio and video files. Nibble reports them only as protected user data."

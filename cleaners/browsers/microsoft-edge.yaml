@@ -1,0 +1,51 @@
+id: microsoft-edge
+name: Microsoft Edge
+category: browser_cache
+platforms: [linux]
+detect:
+  commands: ["microsoft-edge", "microsoft-edge-stable", "microsoft-edge-beta", "microsoft-edge-dev", "msedge"]
+  desktop_files: ["*edge*.desktop", "*microsoft-edge*.desktop"]
+  paths:
+    - "~/.config/microsoft-edge"
+    - "~/.config/microsoft-edge-beta"
+    - "~/.config/microsoft-edge-dev"
+    - "~/.cache/microsoft-edge"
+    - "~/.cache/microsoft-edge-beta"
+    - "~/.cache/microsoft-edge-dev"
+items:
+  - id: web-cache
+    name: Microsoft Edge web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/microsoft-edge"
+      - "**/.cache/microsoft-edge-beta"
+      - "**/.cache/microsoft-edge-dev"
+      - "**/.config/microsoft-edge/*/Cache"
+      - "**/.config/microsoft-edge/*/Code Cache"
+      - "**/.config/microsoft-edge/*/GPUCache"
+      - "**/.config/microsoft-edge-beta/*/Cache"
+      - "**/.config/microsoft-edge-beta/*/Code Cache"
+      - "**/.config/microsoft-edge-beta/*/GPUCache"
+      - "**/.config/microsoft-edge-dev/*/Cache"
+      - "**/.config/microsoft-edge-dev/*/Code Cache"
+      - "**/.config/microsoft-edge-dev/*/GPUCache"
+    reason: "Microsoft Edge cache stores temporary web assets, compiled JavaScript cache, and GPU cache. Cleaning it does not remove passwords, cookies, history, bookmarks, extensions, or browser preferences."
+
+  - id: profile-data
+    name: Microsoft Edge profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/microsoft-edge/*/Login Data"
+      - "**/.config/microsoft-edge/*/Cookies"
+      - "**/.config/microsoft-edge/*/History"
+      - "**/.config/microsoft-edge-beta/*/Login Data"
+      - "**/.config/microsoft-edge-beta/*/Cookies"
+      - "**/.config/microsoft-edge-beta/*/History"
+      - "**/.config/microsoft-edge-dev/*/Login Data"
+      - "**/.config/microsoft-edge-dev/*/Cookies"
+      - "**/.config/microsoft-edge-dev/*/History"
+    reason: "Microsoft Edge profile databases can contain credentials, cookies, history, and account-linked state. Nibble only reports them as protected data."

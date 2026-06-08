@@ -1,0 +1,33 @@
+id: kdenlive
+name: Kdenlive
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["kdenlive"]
+  desktop_files: ["*kdenlive*.desktop"]
+  paths:
+    - "~/.cache/kdenlive"
+    - "~/.local/share/kdenlive"
+    - "~/.var/app/org.kde.kdenlive"
+items:
+  - id: project-cache
+    name: Kdenlive project cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/kdenlive"
+      - "**/.cache/kdenlive-thumbs"
+      - "**/.var/app/org.kde.kdenlive/cache/kdenlive"
+      - "**/.var/app/org.kde.kdenlive/cache/kdenlive-thumbs"
+    reason: "Kdenlive cache can include timeline previews, audio thumbnails, video thumbnails, and proxy-related cache data. It is rebuildable, but large projects may take time to regenerate cache files."
+
+  - id: projects-and-resources
+    name: Kdenlive projects and resources
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.local/share/kdenlive"
+      - "**/.var/app/org.kde.kdenlive/data/kdenlive"
+    reason: "Kdenlive data directories may include project resources, titles, layouts, proxies, and user workflow state. Nibble must not clean them by default."

@@ -1,0 +1,54 @@
+id: local-ai-models
+name: Local AI model stores
+category: dev_ai_agent
+platforms: [linux]
+detect:
+  commands: ["ollama", "huggingface-cli", "lmstudio", "lm-studio", "python", "python3"]
+  desktop_files: ["*ollama*.desktop", "*lmstudio*.desktop", "*lm-studio*.desktop"]
+  paths:
+    - "~/.ollama"
+    - "~/.cache/huggingface"
+    - "~/.cache/torch"
+    - "~/.lm-studio"
+    - "~/.lmstudio"
+    - "~/.cache/lm-studio"
+items:
+  - id: ollama-models
+    name: Ollama model store
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.ollama/models"
+    reason: "Ollama models are downloaded model blobs that can consume many gigabytes. Cleaning them does not remove Ollama configuration, but models must be downloaded again with ollama pull."
+    restore:
+      - "ollama pull <model>"
+
+  - id: huggingface-cache
+    name: Hugging Face cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/huggingface"
+    reason: "Hugging Face cache stores downloaded model weights, tokenizers, datasets, and hub metadata. It is rebuildable, but redownloading large models or datasets can be slow and bandwidth-heavy."
+
+  - id: torch-cache
+    name: PyTorch model cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/torch"
+    reason: "PyTorch cache stores model weights and other downloaded assets used by torch.hub, torchvision, and related tooling. It is rebuildable, but the next run may need to download large artifacts again."
+
+  - id: lm-studio-models
+    name: LM Studio model store
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.lm-studio/models"
+      - "**/.lmstudio/models"
+      - "**/.cache/lm-studio/models"
+    reason: "LM Studio model stores can contain locally selected LLM files that are often several gigabytes each. Review before cleaning because deletion may remove models you intentionally keep offline."

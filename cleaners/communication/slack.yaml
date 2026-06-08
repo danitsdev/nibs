@@ -1,0 +1,37 @@
+id: slack
+name: Slack
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["slack"]
+  desktop_files: ["*slack*.desktop"]
+  paths:
+    - "~/.config/Slack"
+    - "~/.var/app/com.slack.Slack"
+items:
+  - id: app-cache
+    name: Slack app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/Slack/Cache"
+      - "**/.config/Slack/Code Cache"
+      - "**/.config/Slack/GPUCache"
+      - "**/.config/Slack/Service Worker/CacheStorage"
+      - "**/.var/app/com.slack.Slack/config/Slack/Cache"
+      - "**/.var/app/com.slack.Slack/config/Slack/Code Cache"
+      - "**/.var/app/com.slack.Slack/config/Slack/GPUCache"
+    reason: "Slack cache stores temporary UI assets, avatars, previews, compiled code cache, and GPU cache. Cleaning it does not remove workspaces, messages, settings, or login state."
+
+  - id: identity-data
+    name: Slack identity and workspace data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/Slack/Cookies"
+      - "**/.config/Slack/Local Storage"
+      - "**/.config/Slack/Session Storage"
+      - "**/.config/Slack/Preferences"
+    reason: "Slack identity and workspace databases can contain login state, workspace metadata, and account-linked state. Nibble must not clean them by default."

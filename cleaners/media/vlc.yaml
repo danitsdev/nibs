@@ -1,0 +1,29 @@
+id: vlc
+name: VLC media player
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["vlc"]
+  desktop_files: ["*vlc*.desktop"]
+  paths:
+    - "~/.config/vlc"
+    - "~/.cache/vlc"
+items:
+  - id: album-art-cache
+    name: VLC album art cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/vlc/art/artistalbum"
+      - "**/.config/vlc/art/artistalbum"
+    reason: "VLC album art cache stores downloaded media artwork. Cleaning it does not remove media files, playlists, or VLC preferences."
+
+  - id: crash-dumps
+    name: VLC crash dumps
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.config/vlc/crashdump"
+    reason: "VLC crash dumps are diagnostic artifacts and may include details about recently opened media. Review before cleaning."

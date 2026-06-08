@@ -1,0 +1,31 @@
+id: blender
+name: Blender
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["blender"]
+  desktop_files: ["*blender*.desktop"]
+  paths:
+    - "~/.cache/blender"
+    - "~/.config/blender"
+    - "~/.var/app/org.blender.Blender"
+items:
+  - id: cache
+    name: Blender cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/blender"
+      - "**/.var/app/org.blender.Blender/cache/blender"
+    reason: "Blender cache can include temporary render, preview, thumbnail, and simulation-related cache files. It is rebuildable, but large scenes may take time to regenerate previews or caches."
+
+  - id: config-data
+    name: Blender configuration and startup data
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.config/blender"
+      - "**/.var/app/org.blender.Blender/config/blender"
+    reason: "Blender configuration stores preferences, startup files, add-ons, and local workflow state. Nibble reports it only as protected user data."

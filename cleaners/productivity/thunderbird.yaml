@@ -1,0 +1,52 @@
+id: thunderbird
+name: Thunderbird
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["thunderbird"]
+  desktop_files: ["*thunderbird*.desktop"]
+  paths:
+    - "~/.thunderbird"
+    - "~/.mozilla-thunderbird"
+    - "~/.cache/thunderbird"
+    - "~/.var/app/org.mozilla.Thunderbird"
+items:
+  - id: web-cache
+    name: Thunderbird web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/thunderbird"
+      - "**/.thunderbird/*/Cache"
+      - "**/.thunderbird/Profiles/*/Cache"
+      - "**/.mozilla-thunderbird/*/Cache"
+      - "**/.var/app/org.mozilla.Thunderbird/cache/thunderbird"
+    reason: "Thunderbird cache stores temporary web and message rendering cache files. Cleaning it does not remove mail, accounts, passwords, address books, or preferences."
+
+  - id: mail-index
+    name: Thunderbird mail index files
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.thunderbird/*.msf"
+      - "**/.thunderbird/Profiles/*.msf"
+      - "**/.mozilla-thunderbird/*.msf"
+    reason: "Thunderbird .msf index files are rebuildable, but cleaning them can reset message-list column state and force mail folders to reindex."
+
+  - id: profile-data
+    name: Thunderbird profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.thunderbird/*/logins.json"
+      - "**/.thunderbird/*/key4.db"
+      - "**/.thunderbird/*/cookies.sqlite"
+      - "**/.thunderbird/*/prefs.js"
+      - "**/.mozilla-thunderbird/*/logins.json"
+      - "**/.mozilla-thunderbird/*/key4.db"
+      - "**/.mozilla-thunderbird/*/cookies.sqlite"
+      - "**/.mozilla-thunderbird/*/prefs.js"
+    reason: "Thunderbird profile databases can contain mail account credentials, cookies, account settings, and preferences. Nibble must not clean these by default."

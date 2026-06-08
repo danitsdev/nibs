@@ -1,0 +1,38 @@
+id: vivaldi
+name: Vivaldi
+category: browser_cache
+platforms: [linux]
+detect:
+  commands: ["vivaldi", "vivaldi-stable", "vivaldi-snapshot"]
+  desktop_files: ["*vivaldi*.desktop"]
+  paths:
+    - "~/.config/vivaldi"
+    - "~/.cache/vivaldi"
+    - "~/snap/vivaldi"
+items:
+  - id: web-cache
+    name: Vivaldi web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/vivaldi"
+      - "**/.config/vivaldi/*/Cache"
+      - "**/.config/vivaldi/*/Code Cache"
+      - "**/.config/vivaldi/*/GPUCache"
+      - "**/snap/vivaldi/common/.cache/vivaldi"
+      - "**/snap/vivaldi/common/.cache/mesa_shader_cache"
+      - "**/snap/vivaldi/common/.cache/mesa_shader_cache_db"
+    reason: "Vivaldi cache stores temporary web assets, compiled JavaScript cache, GPU cache, and shader cache. Cleaning it does not remove passwords, cookies, history, bookmarks, extensions, or browser preferences."
+
+  - id: profile-data
+    name: Vivaldi profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/vivaldi/*/Login Data"
+      - "**/.config/vivaldi/*/Cookies"
+      - "**/.config/vivaldi/*/History"
+      - "**/.config/vivaldi/*/Preferences"
+    reason: "Vivaldi profile databases can contain credentials, cookies, history, and browser preferences. Nibble only reports them as protected data."

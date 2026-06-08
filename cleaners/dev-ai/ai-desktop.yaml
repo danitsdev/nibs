@@ -1,0 +1,45 @@
+id: ai-desktop
+name: AI desktop apps
+category: dev_ai_agent
+platforms: [linux]
+detect:
+  commands: ["chatgpt", "claude-desktop", "lmstudio", "lm-studio"]
+  desktop_files: ["*chatgpt*.desktop", "*claude*.desktop", "*lmstudio*.desktop", "*lm-studio*.desktop"]
+  paths:
+    - "~/.config/ChatGPT"
+    - "~/.config/Claude"
+    - "~/.config/LM Studio"
+    - "~/.cache/ChatGPT"
+    - "~/.cache/Claude"
+    - "~/.cache/LM Studio"
+items:
+  - id: electron-cache
+    name: AI desktop app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/ChatGPT/Cache"
+      - "**/.config/ChatGPT/Code Cache"
+      - "**/.config/ChatGPT/GPUCache"
+      - "**/.cache/ChatGPT"
+      - "**/.config/Claude/Cache"
+      - "**/.config/Claude/Code Cache"
+      - "**/.config/Claude/GPUCache"
+      - "**/.cache/Claude"
+      - "**/.config/LM Studio/Cache"
+      - "**/.config/LM Studio/Code Cache"
+      - "**/.config/LM Studio/GPUCache"
+      - "**/.cache/LM Studio"
+    reason: "AI desktop app cache stores temporary Electron UI assets, compiled code cache, and GPU cache. Cleaning it does not remove projects, model files, chat history, settings, or auth state."
+
+  - id: logs
+    name: AI desktop app logs
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.config/ChatGPT/logs"
+      - "**/.config/Claude/logs"
+      - "**/.config/LM Studio/logs"
+    reason: "AI desktop logs are diagnostic output and may contain prompt or project context. Review before cleaning."

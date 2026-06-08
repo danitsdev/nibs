@@ -1,0 +1,32 @@
+id: krita
+name: Krita
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["krita"]
+  desktop_files: ["*krita*.desktop"]
+  paths:
+    - "~/.cache/krita"
+    - "~/.local/share/krita"
+    - "~/.var/app/org.kde.krita"
+items:
+  - id: cache
+    name: Krita cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/krita"
+      - "**/.var/app/org.kde.krita/cache/krita"
+    reason: "Krita cache stores temporary thumbnails, previews, and runtime cache data. Cleaning it does not remove drawings, brushes, resources, settings, or workspace data."
+
+  - id: resources
+    name: Krita resources and settings
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.local/share/krita"
+      - "**/.config/kritarc"
+      - "**/.var/app/org.kde.krita/data/krita"
+    reason: "Krita resources can include brushes, palettes, workspaces, templates, and user-created assets. Nibble must not clean them by default."

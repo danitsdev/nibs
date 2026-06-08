@@ -1,0 +1,31 @@
+id: inkscape
+name: Inkscape
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["inkscape"]
+  desktop_files: ["*inkscape*.desktop"]
+  paths:
+    - "~/.cache/inkscape"
+    - "~/.config/inkscape"
+    - "~/.var/app/org.inkscape.Inkscape"
+items:
+  - id: cache
+    name: Inkscape cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/inkscape"
+      - "**/.var/app/org.inkscape.Inkscape/cache/inkscape"
+    reason: "Inkscape cache stores temporary thumbnails and runtime cache data. Cleaning it does not remove drawings, extensions, templates, settings, or documents."
+
+  - id: config-data
+    name: Inkscape configuration and resources
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.config/inkscape"
+      - "**/.var/app/org.inkscape.Inkscape/config/inkscape"
+    reason: "Inkscape configuration can contain preferences, extensions, templates, palettes, and user workflow state. Nibble reports it only as protected user data."

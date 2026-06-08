@@ -72,19 +72,17 @@ pub enum TuiScreen {
     HomeConfirmTrash,
     Wizard,
     Dashboard,
-    PathInput {
-        is_analyze: bool,
-    },
+    SmartClean,
     AppUninstallSelector,
     AppUninstallList,
-    #[allow(dead_code)]
-    DoctorReport,
     Scanning,
     Optimize,
     Analyze,
     Status,
     Settings,
     Goodbye,
+    CleanComplete,
+    TrashManager,
 }
 
 pub struct TuiState {
@@ -108,15 +106,19 @@ pub struct TuiState {
     pub tick: usize,
     pub start_time: std::time::Instant,
     pub is_home_mode: bool,
+    pub is_smart_clean: bool,
+
+    // Last scan tracking (for Today panel)
+    pub last_scan_time: Option<std::time::Instant>,
+    pub last_scan_findings: usize,
+    pub last_scan_recommended: usize,
+    pub last_scan_size: u64,
 
     // Home screen & Sub-modules TUI state
     pub home_selected_idx: usize, // Selected index in the Home menu (0: Smart Clean, 1: Deep Clean, 2: Analyze Disk, 3: Apps & Leftovers, 4: Optimize System, 5: Trash, 6: Settings, 7: Exit)
-    pub input_buffer: String,
     pub app_name: String,
     pub app_remnants: Vec<(PathBuf, u64)>, // Path and size of remnants
     pub selected_remnants: HashSet<usize>, // Selected indices for app leftovers cleaning
-    pub doctor_results: Vec<crate::doctor::CheckResult>,
-    pub doctor_selected_idx: usize,
 
     // Async scanning state
     pub scan_rx: Option<std::sync::mpsc::Receiver<crate::scanner::walker::ScanProgress>>,
@@ -156,9 +158,19 @@ pub struct TuiState {
 
     // Settings state
     pub delete_directly: bool,
+    pub shred: bool,
     pub theme: &'static NibbleTheme,
     pub settings_cursor_idx: usize,
     pub confirm_idx: usize,
+
+    // Clean complete state
+    pub cleaned_bytes: u64,
+    pub cleaned_count: usize,
+    pub cleaned_mode: String,
+
+    // Trash manager state
+    pub trash_items: Vec<crate::cleaner::trash::TrashItem>,
+    pub trash_selected_idx: usize,
 }
 
 impl TuiState {
@@ -195,19 +207,30 @@ impl TuiState {
             tick: 0,
             start_time: std::time::Instant::now(),
             is_home_mode: false,
+            is_smart_clean: false,
+
+            last_scan_time: None,
+            last_scan_findings: 0,
+            last_scan_recommended: 0,
+            last_scan_size: 0,
 
             home_selected_idx: 0,
-            input_buffer: String::new(),
             app_name: String::new(),
             app_remnants: Vec::new(),
             selected_remnants: HashSet::new(),
-            doctor_results: Vec::new(),
-            doctor_selected_idx: 0,
 
             delete_directly: false,
+            shred: false,
             theme: &crate::theme::SYSTEM,
             settings_cursor_idx: 0,
             confirm_idx: 0,
+
+            cleaned_bytes: 0,
+            cleaned_count: 0,
+            cleaned_mode: String::new(),
+
+            trash_items: Vec::new(),
+            trash_selected_idx: 0,
 
             scan_rx: None,
             scan_files_count: 0,
@@ -536,7 +559,8 @@ impl TuiState {
                 let rx_diff = rx.saturating_sub(self.sys_net_last_rx_bytes);
                 let tx_diff = tx.saturating_sub(self.sys_net_last_tx_bytes);
                 self.sys_network_in_rate = (rx_diff as f64 / 1024.0) / elapsed; // KB/s
-                self.sys_network_out_rate = (tx_diff as f64 / 1024.0) / elapsed; // KB/s
+                self.sys_network_out_rate = (tx_diff as f64 / 1024.0) / elapsed;
+                // KB/s
             }
             self.sys_net_last_rx_bytes = rx;
             self.sys_net_last_tx_bytes = tx;

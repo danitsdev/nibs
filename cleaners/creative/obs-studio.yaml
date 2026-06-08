@@ -1,0 +1,31 @@
+id: obs-studio
+name: OBS Studio
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["obs", "obs-studio"]
+  desktop_files: ["*obs*.desktop"]
+  paths:
+    - "~/.config/obs-studio"
+    - "~/.cache/obs-studio"
+    - "~/.var/app/com.obsproject.Studio"
+items:
+  - id: cache
+    name: OBS Studio cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/obs-studio"
+      - "**/.var/app/com.obsproject.Studio/cache"
+    reason: "OBS Studio cache stores temporary runtime and plugin cache files. Cleaning it does not remove scenes, profiles, recordings, plugins, or settings."
+
+  - id: logs
+    name: OBS Studio logs
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.config/obs-studio/logs"
+      - "**/.var/app/com.obsproject.Studio/config/obs-studio/logs"
+    reason: "OBS Studio logs are diagnostic files and may include capture device names, scene names, stream setup details, or plugin output. Review before cleaning."

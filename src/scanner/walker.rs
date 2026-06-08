@@ -20,6 +20,8 @@ pub struct ScanOptions {
     pub min_age_days: u64,
     pub min_size_bytes: u64,
     pub brute: bool,
+    pub include_deep_rules: bool,
+    pub whitelist: Vec<PathBuf>,
 }
 
 impl Default for ScanOptions {
@@ -31,6 +33,8 @@ impl Default for ScanOptions {
             min_age_days: 0,
             min_size_bytes: 1024 * 1024,
             brute: false,
+            include_deep_rules: false,
+            whitelist: crate::safety::load_user_whitelist(),
         }
     }
 }
@@ -132,6 +136,14 @@ pub fn scan_directory_with_progress(
             continue;
         }
 
+        // Custom User Whitelist Filter: Skip user-configured whitelist paths
+        if crate::safety::is_whitelisted_path(path, &options.whitelist) {
+            if entry.file_type().is_dir() {
+                it.skip_current_dir();
+            }
+            continue;
+        }
+
         // Safety Filter: Check for protected system paths (always skip)
         if is_protected_path(path) {
             if entry.file_type().is_dir() {
@@ -218,10 +230,6 @@ pub fn scan_directory_with_progress(
                 cleaner_id: rule.cleaner_id.clone(),
                 cleaner_name: rule.cleaner_name.clone(),
                 safety_class: rule.safety_class,
-                kept: rule.kept.clone(),
-                block_if_running: rule.block_if_running,
-                process_names: rule.process_names.clone(),
-                running_processes: rule.running_processes.clone(),
                 last_modified,
             });
 
@@ -289,10 +297,6 @@ pub fn scan_directory_with_progress(
                                 cleaner_id: None,
                                 cleaner_name: None,
                                 safety_class: None,
-                                kept: None,
-                                block_if_running: false,
-                                process_names: Vec::new(),
-                                running_processes: Vec::new(),
                                 last_modified,
                             });
                         }
@@ -381,10 +385,6 @@ mod tests {
             cleaner_id: None,
             cleaner_name: None,
             safety_class: None,
-            kept: None,
-            block_if_running: false,
-            process_names: Vec::new(),
-            running_processes: Vec::new(),
         }];
 
         // 1. Scan with min_age_days = 7 -> since it was just created, it should be SKIPPED!
@@ -432,10 +432,6 @@ mod tests {
             cleaner_id: None,
             cleaner_name: None,
             safety_class: None,
-            kept: None,
-            block_if_running: false,
-            process_names: Vec::new(),
-            running_processes: Vec::new(),
         }];
 
         let mut options = ScanOptions {
@@ -448,6 +444,52 @@ mod tests {
         options.min_size_bytes = 0;
         let (findings, _warnings) = scan_directory(&temp_dir, &rules, &options);
         assert_eq!(findings.len(), 1);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_whitelist_filtering() {
+        use crate::findings::FindingCategory;
+
+        let temp_dir = std::env::temp_dir().join("nibble_test_whitelist");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let node_modules_dir = temp_dir.join("node_modules");
+        fs::create_dir_all(&node_modules_dir).unwrap();
+
+        let file = node_modules_dir.join("package.json");
+        let mut f = File::create(&file).unwrap();
+        f.write_all(b"{}").unwrap();
+
+        let rules = vec![Rule {
+            id: "node_modules".to_string(),
+            name: "Node modules".to_string(),
+            category: FindingCategory::RebuildableDependency,
+            risk: RiskLevel::Safe,
+            patterns: vec!["**/node_modules".to_string()],
+            reason: "Node modules cache".to_string(),
+            restore: None,
+            default_action: None,
+            cleaner_id: None,
+            cleaner_name: None,
+            safety_class: None,
+        }];
+
+        // 1. Scan with empty whitelist -> node_modules should be found.
+        let mut options = ScanOptions {
+            min_size_bytes: 0,
+            whitelist: vec![],
+            ..Default::default()
+        };
+        let (findings, _warnings) = scan_directory(&temp_dir, &rules, &options);
+        assert_eq!(findings.len(), 1);
+
+        // 2. Scan with node_modules dir whitelisted -> should be skipped!
+        options.whitelist = vec![node_modules_dir.clone()];
+        let (findings, _warnings) = scan_directory(&temp_dir, &rules, &options);
+        assert_eq!(findings.len(), 0);
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

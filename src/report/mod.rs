@@ -58,10 +58,6 @@ mod tests {
             cleaner_id: None,
             cleaner_name: None,
             safety_class: None,
-            kept: None,
-            block_if_running: false,
-            process_names: Vec::new(),
-            running_processes: Vec::new(),
             last_modified: None,
         }];
         let warnings = vec![ScanWarning {

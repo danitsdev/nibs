@@ -99,23 +99,11 @@ pub struct Finding {
     pub cleaner_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub safety_class: Option<SafetyClass>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kept: Option<Vec<String>>,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub block_if_running: bool,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub process_names: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub running_processes: Vec<String>,
     pub last_modified: Option<DateTime<Utc>>,
 }
 
 impl Finding {
     pub fn is_recommended_clean(&self) -> bool {
-        if self.block_if_running && !self.running_processes.is_empty() {
-            return false;
-        }
-
         self.risk == RiskLevel::Safe
             && self
                 .default_action

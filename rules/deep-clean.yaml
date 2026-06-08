@@ -1,0 +1,165 @@
+- id: docker_build_cache
+  name: Docker BuildKit cache
+  category: docker_info
+  risk: info
+  patterns:
+    - "**/.local/share/docker/buildkit"
+    - "**/var/lib/docker/buildkit"
+  reason: "Docker BuildKit cache can hold large rebuildable build layers. Do not delete daemon storage manually; review with 'docker system df' and prefer 'docker builder prune --filter until=720h'."
+  default_action: never
+  safety_class: rebuildable
+
+- id: docker_dangling_images
+  name: Docker image metadata
+  category: docker_info
+  risk: info
+  patterns:
+    - "**/.local/share/docker/image"
+    - "**/var/lib/docker/image"
+  reason: "Docker image metadata may point to reclaimable dangling images, but deleting the metadata directory manually can break Docker state. Review with 'docker system df' and prefer 'docker image prune' or 'docker system prune --filter until=720h'."
+  default_action: never
+  safety_class: usually_safe
+
+- id: docker_volumes_protected
+  name: Docker volumes
+  category: docker_info
+  risk: risky
+  patterns:
+    - "**/.local/share/docker/volumes"
+    - "**/var/lib/docker/volumes"
+  reason: "Docker volumes often contain databases, uploads, local development state, and other non-rebuildable data. Nibble must never clean Docker volumes automatically."
+  default_action: never
+  safety_class: user_data
+
+- id: podman_image_metadata
+  name: Podman image metadata
+  category: docker_info
+  risk: info
+  patterns:
+    - "**/.local/share/containers/storage/overlay-images"
+    - "**/.local/share/containers/storage/vfs-images"
+  reason: "Podman image metadata can indicate reclaimable container images, but deleting storage internals manually can break the container engine. Review with 'podman system df' and prefer Podman prune commands."
+  default_action: never
+  safety_class: user_data
+
+- id: podman_volumes_protected
+  name: Podman volumes
+  category: docker_info
+  risk: risky
+  patterns:
+    - "**/.local/share/containers/storage/volumes"
+  reason: "Podman volumes may contain databases, uploads, and local development state. Nibble must never clean container volumes automatically."
+  default_action: never
+  safety_class: user_data
+
+- id: old_installers_deb
+  name: Old .deb package files
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/Downloads/*.deb"
+    - "**/downloads/*.deb"
+  reason: "These are Debian package files that were downloaded for software installation. Once the software is installed, the .deb file is no longer needed. Deleting these is safe: they are archives that can be re-downloaded if the same version is ever needed again."
+  default_action: clean
+  safety_class: usually_safe
+
+- id: old_installers_rpm
+  name: Old .rpm package files
+  category: temporary_file
+  risk: safe
+  patterns:
+    - "**/Downloads/*.rpm"
+    - "**/downloads/*.rpm"
+  reason: "These are Red Hat package files downloaded for software installation. Once installed, the .rpm file is no longer required. Deleting these is safe: they are archives that can be re-downloaded."
+  default_action: clean
+  safety_class: usually_safe
+
+- id: old_installers_appimage
+  name: Old AppImage files
+  category: temporary_file
+  risk: review
+  patterns:
+    - "**/Downloads/*.AppImage"
+    - "**/Downloads/*.appimage"
+    - "**/downloads/*.AppImage"
+    - "**/downloads/*.appimage"
+  reason: "AppImage files are portable Linux applications that can run without installation. Deleting old versions is safe, but verify the application is not still in use. Marked 'review' because AppImages are often actively used without being 'installed'."
+  default_action: review
+  safety_class: usually_safe
+
+- id: old_kernels_apt
+  name: Old Linux kernel images (APT)
+  category: system_info_only
+  risk: review
+  patterns:
+    - "**/boot/vmlinuz-*old*"
+    - "**/boot/initrd.img-*old*"
+  reason: "These are old Linux kernel and initrd images kept by the package manager for rollback safety. Modern Ubuntu/Debian systems keep 2–3 old kernels. Removing very old kernels (beyond the last 2) is safe and frees boot partition space. Marked 'review' — only remove kernels you are sure are no longer booted."
+  default_action: review
+  safety_class: usually_safe
+
+- id: old_kernels_modules
+  name: Old kernel module directories
+  category: system_info_only
+  risk: review
+  patterns:
+    - "**/lib/modules/*-old-*"
+  reason: "Kernel module directories accumulate for each installed kernel version. Removing modules for deleted/unused kernels is safe and can free significant space under /lib. Marked 'review' to avoid removing modules for your running kernel."
+  default_action: review
+  safety_class: usually_safe
+
+- id: large_downloads_old
+  name: Old large files in Downloads
+  category: large_unknown
+  risk: review
+  patterns:
+    - "**/Downloads/*.iso"
+    - "**/Downloads/*.ISO"
+    - "**/Downloads/*.tar.gz"
+    - "**/Downloads/*.tar.xz"
+    - "**/Downloads/*.tar.bz2"
+    - "**/Downloads/*.zip"
+    - "**/Downloads/*.7z"
+    - "**/Downloads/*.rar"
+    - "**/downloads/*.iso"
+    - "**/downloads/*.ISO"
+    - "**/downloads/*.tar.gz"
+    - "**/downloads/*.tar.xz"
+    - "**/downloads/*.tar.bz2"
+    - "**/downloads/*.zip"
+    - "**/downloads/*.7z"
+    - "**/downloads/*.rar"
+  reason: "Archive and disk image files in Downloads are often installation media or compressed files that were extracted and no longer needed. These can be very large (ISOs up to 4+ GB). Deleting old ones is safe but marked 'review' so you can check before removal."
+  default_action: review
+  safety_class: user_data
+
+- id: flatpak_runtimes_unused
+  name: Unused Flatpak runtimes
+  category: temporary_file
+  risk: review
+  patterns:
+    - "**/.local/share/flatpak/runtime"
+  reason: "This directory stores Flatpak runtime environments shared across applications. Old/unused runtime versions accumulate over time and can take significant space. Deleting is safe if the runtime is not required by any remaining application. Marked 'review' — check with 'flatpak list --runtime' before cleaning."
+  default_action: review
+  safety_class: usually_safe
+
+- id: flatpak_app_data_orphaned
+  name: Orphaned Flatpak app data
+  category: desktop_app_cache
+  risk: review
+  patterns:
+    - "**/.var/app/*/config"
+    - "**/.var/app/*/data"
+  reason: "These are leftover configuration and data directories for Flatpak applications that may have been uninstalled. They persist even after app removal. Review these to ensure the associated app is no longer needed. Marked 'review' to avoid deleting data for still-installed applications."
+  default_action: review
+  safety_class: user_data
+
+- id: snap_old_revisions
+  name: Old Snap package revisions
+  category: temporary_file
+  risk: review
+  patterns:
+    - "**/var/lib/snapd/snaps/*_*.snap"
+  reason: "Snapd retains old revisions of installed snaps to support rollbacks. These accumulate and can use gigabytes. Deleting old revisions is safe: the current version remains intact. Use 'snap list --revisions' to review. Marked 'review' for safety."
+  default_action: review
+  safety_class: usually_safe

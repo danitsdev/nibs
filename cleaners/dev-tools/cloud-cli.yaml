@@ -1,0 +1,37 @@
+id: cloud-cli
+name: Cloud CLIs
+category: language_cache
+platforms: [linux]
+detect:
+  commands: ["aws", "gcloud", "az", "kubectl"]
+  paths:
+    - "~/.aws"
+    - "~/.config/gcloud"
+    - "~/.azure"
+    - "~/.kube"
+items:
+  - id: caches-and-logs
+    name: Cloud CLI caches and logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.aws/cli/cache"
+      - "**/.config/gcloud/logs"
+      - "**/.azure/logs"
+      - "**/.kube/cache"
+    reason: "Cloud CLI caches and logs contain temporary authentication helper cache files, command logs, and Kubernetes discovery cache data. Cleaning them does not remove configured profiles or credentials."
+
+  - id: credentials
+    name: Cloud CLI credentials
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.aws/credentials"
+      - "**/.aws/config"
+      - "**/.config/gcloud/application_default_credentials.json"
+      - "**/.azure/accessTokens.json"
+      - "**/.azure/azureProfile.json"
+      - "**/.kube/config"
+    reason: "Cloud CLI credential and profile files can contain account, cluster, token, or secret material. Nibble must not clean them by default."

@@ -1,0 +1,32 @@
+id: transmission
+name: Transmission
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["transmission-gtk", "transmission-qt", "transmission"]
+  desktop_files: ["*transmission*.desktop"]
+  paths:
+    - "~/.config/transmission"
+    - "~/.var/app/com.transmissionbt.Transmission"
+items:
+  - id: blocklists
+    name: Transmission blocklists
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.config/transmission/blocklists"
+      - "**/.var/app/com.transmissionbt.Transmission/config/transmission/blocklists"
+    reason: "Transmission blocklists are downloaded peer-blocking metadata. Cleaning them does not remove torrents or downloaded files; Transmission can download them again."
+
+  - id: torrent-state
+    name: Transmission torrent state
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.config/transmission/resume"
+      - "**/.config/transmission/torrents"
+      - "**/.var/app/com.transmissionbt.Transmission/config/transmission/resume"
+      - "**/.var/app/com.transmissionbt.Transmission/config/transmission/torrents"
+    reason: "Transmission torrent and resume metadata controls active torrent state. Cleaning it can lose torrent tracking state, so Nibble must not clean it by default."

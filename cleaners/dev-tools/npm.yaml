@@ -2,7 +2,11 @@ id: npm
 name: npm and npx
 category: language_cache
 platforms: [linux]
-running: ["npm", "npx", "node"]
+detect:
+  commands: ["npm", "npx", "node"]
+  paths:
+    - "~/.npm"
+    - "~/.cache/npm"
 items:
   - id: package-cache
     name: npm package cache
@@ -13,10 +17,6 @@ items:
       - "**/.npm/_cacache"
       - "**/.cache/npm"
     reason: "npm package cache stores downloaded package tarballs and metadata. Cleaning it is safe for project data, but future installs may be slower and require re-downloads."
-    kept:
-      - "global npm packages"
-      - "project node_modules"
-      - "npm configuration and tokens"
     restore:
       - "npm install"
 
@@ -28,9 +28,5 @@ items:
     paths:
       - "**/.npm/_npx"
     reason: "npx cache contains temporary command installs. It is rebuildable, but Nibble does not yet know which commands produced each entry."
-    kept:
-      - "npm config"
-      - "tokens"
-      - "project dependencies"
     restore:
       - "npx <command>"

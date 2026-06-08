@@ -1,0 +1,67 @@
+id: javascript-package-managers
+name: JavaScript package managers
+category: language_cache
+platforms: [linux]
+detect:
+  commands: ["pnpm", "yarn", "bun", "corepack", "node-gyp", "electron"]
+  paths:
+    - "~/.local/share/pnpm"
+    - "~/.cache/node/corepack"
+    - "~/.cache/yarn"
+    - "~/.yarn"
+    - "~/.bun"
+items:
+  - id: pnpm-store
+    name: pnpm global store
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.local/share/pnpm/store"
+      - "**/.pnpm-store"
+    reason: "The pnpm store is a global content-addressed package store. It is rebuildable, but projects may need `pnpm install` again if hardlinked dependencies are removed."
+    restore:
+      - "pnpm install"
+
+  - id: yarn-cache
+    name: Yarn package cache
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.cache/yarn"
+      - "**/.yarn/cache"
+    reason: "Yarn package cache stores downloaded package archives. Cleaning it does not remove project source or installed dependencies, though future installs may re-download packages."
+    restore:
+      - "yarn install"
+
+  - id: bun-cache
+    name: Bun package cache
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.bun/install/cache"
+    reason: "Bun package cache stores downloaded npm packages. Cleaning it does not remove project source or installed dependencies, though future installs may re-download packages."
+    restore:
+      - "bun install"
+
+  - id: corepack-cache
+    name: Corepack cache
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.cache/node/corepack"
+    reason: "Corepack cache stores package manager shims and downloaded package-manager releases. It is rebuildable when Corepack is used again."
+
+  - id: native-build-caches
+    name: Node native build caches
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.cache/node-gyp"
+      - "**/.node-gyp"
+      - "**/.cache/electron"
+    reason: "Node native build caches store downloaded headers and Electron build support files. Cleaning them does not remove project source, though native modules may take longer to rebuild."

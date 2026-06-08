@@ -1,0 +1,37 @@
+id: docker-tooling
+name: Docker tooling
+category: language_cache
+platforms: [linux]
+detect:
+  commands: ["docker", "podman", "buildx"]
+  paths:
+    - "~/.docker"
+    - "~/.local/share/containers"
+items:
+  - id: buildx-cache
+    name: Docker Buildx cache
+    risk: safe
+    safety_class: rebuildable
+    default_action: clean
+    paths:
+      - "**/.docker/buildx/cache"
+    reason: "Docker Buildx cache stores rebuildable build artifacts. Cleaning it does not remove images, containers, volumes, or Docker credentials."
+
+  - id: container-temp
+    name: Container storage temp files
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.local/share/containers/storage/tmp"
+    reason: "Rootless container temporary files are usually rebuildable, but review before cleaning because container engines may be using the storage area."
+
+  - id: credentials
+    name: Docker credentials and config
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.docker/config.json"
+      - "**/.docker/contexts"
+    reason: "Docker config and contexts can contain registry auth helpers, endpoints, and account-linked state. Nibble must not clean them by default."

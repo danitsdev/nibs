@@ -1,0 +1,34 @@
+id: telegram
+name: Telegram Desktop
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["telegram-desktop", "telegram"]
+  desktop_files: ["*telegram*.desktop"]
+  paths:
+    - "~/.local/share/TelegramDesktop"
+    - "~/.var/app/org.telegram.desktop"
+    - "~/.cache/TelegramDesktop"
+items:
+  - id: media-cache
+    name: Telegram media cache
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.local/share/TelegramDesktop/tdata/user_data/cache"
+      - "**/.local/share/TelegramDesktop/tdata/user_data/media_cache"
+      - "**/.cache/TelegramDesktop"
+      - "**/.var/app/org.telegram.desktop/cache"
+    reason: "Telegram media cache can hold downloaded media previews and cached files from chats. It can be regenerated or re-downloaded, but review it because cached chat media may be user-relevant."
+
+  - id: auth-state
+    name: Telegram auth state
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.local/share/TelegramDesktop/tdata/key_data"
+      - "**/.local/share/TelegramDesktop/tdata/settings"
+      - "**/.local/share/TelegramDesktop/tdata/user_data"
+    reason: "Telegram tdata contains account state, chat metadata, and local application state. Nibble must not clean it automatically."

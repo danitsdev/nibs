@@ -1,0 +1,38 @@
+id: signal
+name: Signal Desktop
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["signal-desktop", "signal"]
+  desktop_files: ["*signal*.desktop"]
+  paths:
+    - "~/.config/Signal"
+    - "~/.var/app/org.signal.Signal"
+items:
+  - id: app-cache
+    name: Signal Desktop cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/Signal/Cache"
+      - "**/.config/Signal/Code Cache"
+      - "**/.config/Signal/GPUCache"
+      - "**/.config/Signal/Service Worker/CacheStorage"
+      - "**/.var/app/org.signal.Signal/config/Signal/Cache"
+      - "**/.var/app/org.signal.Signal/config/Signal/Code Cache"
+      - "**/.var/app/org.signal.Signal/config/Signal/GPUCache"
+    reason: "Signal Desktop cache stores temporary Electron UI assets, compiled code cache, previews, and GPU cache. Cleaning it does not remove messages, attachments, settings, or linked-device state."
+
+  - id: identity-data
+    name: Signal identity and message data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/Signal/sql/db.sqlite"
+      - "**/.config/Signal/config.json"
+      - "**/.config/Signal/Local Storage"
+      - "**/.config/Signal/Session Storage"
+      - "**/.config/Signal/Cookies"
+    reason: "Signal local databases and identity files can contain encrypted message data, keys, linked-device state, and account state. Nibble must not clean them by default."

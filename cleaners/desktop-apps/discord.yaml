@@ -2,22 +2,51 @@ id: discord
 name: Discord
 category: desktop_app_cache
 platforms: [linux]
-running: ["discord"]
+detect:
+  commands: ["discord", "discordptb", "discordcanary"]
+  desktop_files: ["*discord*.desktop"]
+  paths:
+    - "~/.config/discord"
+    - "~/.config/discordptb"
+    - "~/.config/discordcanary"
+    - "~/snap/discord"
+    - "~/.var/app/com.discordapp.Discord"
+    - "~/.var/app/com.discordapp.DiscordCanary"
 items:
   - id: app-cache
     name: Discord app cache
     risk: safe
     safety_class: safe
     default_action: clean
-    block_if_running: true
     paths:
       - "**/.config/discord/Cache"
       - "**/.config/discord/Code Cache"
       - "**/.config/discord/GPUCache"
+      - "**/.config/discordptb/Cache"
+      - "**/.config/discordptb/Code Cache"
+      - "**/.config/discordptb/GPUCache"
+      - "**/.config/discordcanary/Cache"
+      - "**/.config/discordcanary/Code Cache"
+      - "**/.config/discordcanary/GPUCache"
+      - "**/snap/discord/current/.config/discord/Cache"
+      - "**/snap/discord/current/.config/discord/Code Cache"
+      - "**/snap/discord/current/.config/discord/GPUCache"
       - "**/.var/app/com.discordapp.Discord/cache"
+      - "**/.var/app/com.discordapp.DiscordCanary/cache"
     reason: "Discord cache stores temporary media previews, avatars, compiled UI cache, and GPU cache. Cleaning it does not remove your servers, messages, settings, or login state."
-    kept:
-      - "login state"
-      - "server list and messages"
-      - "settings"
-      - "downloads outside Discord cache"
+
+  - id: identity-data
+    name: Discord identity and local app state
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/discord/Local State"
+      - "**/.config/discord/Local Storage"
+      - "**/.config/discord/Session Storage"
+      - "**/.config/discord/Cookies"
+      - "**/.config/discordcanary/Local State"
+      - "**/.config/discordcanary/Local Storage"
+      - "**/.config/discordcanary/Session Storage"
+      - "**/.config/discordcanary/Cookies"
+    reason: "Discord local state can contain login state, account-linked data, and app settings. Nibble must not clean it by default."

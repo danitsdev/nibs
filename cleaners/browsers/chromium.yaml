@@ -2,14 +2,26 @@ id: chromium-family
 name: Chromium browsers
 category: browser_cache
 platforms: [linux]
-running: ["chrome", "chromium", "brave", "msedge"]
+detect:
+  commands: ["google-chrome", "chromium", "chromium-browser", "brave-browser"]
+  desktop_files: ["*chrome*.desktop", "*chromium*.desktop", "*brave*.desktop"]
+  paths:
+    - "~/.config/google-chrome"
+    - "~/.config/chromium"
+    - "~/.config/BraveSoftware/Brave-Browser"
+    - "~/.cache/google-chrome"
+    - "~/.cache/chromium"
+    - "~/.cache/BraveSoftware/Brave-Browser"
+    - "~/.var/app/org.chromium.Chromium"
+    - "~/.var/app/io.github.ungoogled_software.ungoogled_chromium"
+    - "~/snap/chromium"
+    - "~/snap/brave"
 items:
   - id: web-cache
     name: Chromium browser web cache
     risk: safe
     safety_class: safe
     default_action: clean
-    block_if_running: true
     paths:
       - "**/.cache/google-chrome/*/Cache"
       - "**/.cache/google-chrome/*/GPUCache"
@@ -17,16 +29,29 @@ items:
       - "**/.cache/chromium/*/GPUCache"
       - "**/.cache/BraveSoftware/Brave-Browser/*/Cache"
       - "**/.cache/BraveSoftware/Brave-Browser/*/GPUCache"
+      - "**/.cache/BraveSoftware/Brave-Browser"
       - "**/.config/google-chrome/*/Code Cache"
+      - "**/.config/google-chrome/*/GPUCache"
+      - "**/.config/google-chrome/component_crx_cache"
+      - "**/.config/google-chrome/extensions_crx_cache"
+      - "**/.config/google-chrome/ShaderCache"
       - "**/.config/chromium/*/Code Cache"
+      - "**/.config/chromium/*/GPUCache"
+      - "**/.config/chromium/component_crx_cache"
+      - "**/.config/chromium/extensions_crx_cache"
+      - "**/.config/chromium/ShaderCache"
       - "**/.config/BraveSoftware/Brave-Browser/*/Code Cache"
+      - "**/.config/BraveSoftware/Brave-Browser/*/GPUCache"
+      - "**/.config/BraveSoftware/Brave-Browser/component_crx_cache"
+      - "**/.config/BraveSoftware/Brave-Browser/extensions_crx_cache"
+      - "**/.config/BraveSoftware/Brave-Browser/ShaderCache"
+      - "**/.var/app/org.chromium.Chromium/cache"
+      - "**/.var/app/io.github.ungoogled_software.ungoogled_chromium/cache"
+      - "**/snap/chromium/common/.cache/mesa_shader_cache"
+      - "**/snap/chromium/common/.cache/mesa_shader_cache_db"
+      - "**/snap/brave/common/.cache/BraveSoftware"
+      - "**/snap/brave/common/.cache/mesa_shader_cache"
     reason: "Chromium-family browser cache stores temporary web assets, compiled JavaScript cache, and GPU cache. Cleaning it does not remove passwords, cookies, history, bookmarks, extensions, or browser preferences."
-    kept:
-      - "saved passwords"
-      - "cookies and active logins"
-      - "browsing history"
-      - "bookmarks"
-      - "extensions and preferences"
 
   - id: profile-data
     name: Chromium browser profile data
@@ -43,6 +68,7 @@ items:
       - "**/.config/BraveSoftware/Brave-Browser/*/Login Data"
       - "**/.config/BraveSoftware/Brave-Browser/*/Cookies"
       - "**/.config/BraveSoftware/Brave-Browser/*/History"
+      - "**/snap/chromium/common/chromium/*/Login Data"
+      - "**/snap/chromium/common/chromium/*/Cookies"
+      - "**/snap/chromium/common/chromium/*/History"
     reason: "Chromium profile databases can contain credentials, cookies, history, and account-linked state. Nibble only reports them as protected data."
-    kept:
-      - "all browser identity, history, and preference data"

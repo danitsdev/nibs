@@ -1,0 +1,72 @@
+id: android-studio
+name: Android Studio
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["studio", "android-studio", "studio.sh"]
+  desktop_files: ["*android-studio*.desktop", "*jetbrains-studio*.desktop"]
+  paths:
+    - "~/.cache/Google/AndroidStudio"
+    - "~/.config/Google/AndroidStudio"
+    - "~/.local/share/Google/AndroidStudio"
+    - "~/.android"
+items:
+  - id: ide-cache
+    name: Android Studio IDE cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/Google/AndroidStudio*/caches"
+      - "**/.cache/Google/AndroidStudio*/compile-server"
+      - "**/.cache/Google/AndroidStudio*/tmp"
+      - "**/.local/share/Google/AndroidStudio*/log"
+    reason: "Android Studio IDE cache stores indexes, generated metadata, and diagnostic logs. It is rebuildable, but the next IDE startup and project sync may be slower."
+
+  - id: version-scoped-data
+    name: Android Studio version-scoped data
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.cache/Google/AndroidStudio20*"
+      - "**/.config/Google/AndroidStudio20*"
+      - "**/.local/share/Google/AndroidStudio20*"
+    reason: "Android Studio keeps cache, config, plugins, and logs in version-scoped folders. Old versions can be large after upgrades, but the current version may also match this shape, so review age and version before cleaning."
+
+  - id: build-cache
+    name: Android build cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.android/build-cache"
+      - "**/.gradle/caches/modules-2/files-2.1/com.android.tools.build"
+    reason: "Android build cache stores generated build artifacts and Android Gradle Plugin dependencies. It is rebuildable, but Gradle may need to download or rebuild large artifacts again."
+    restore:
+      - "Run a Gradle sync or project build."
+
+  - id: sdk-components
+    name: Android SDK versioned components
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/Android/Sdk/build-tools/*"
+      - "**/Android/Sdk/cmake/*"
+      - "**/Android/Sdk/ndk/*"
+      - "**/Android/Sdk/platforms/android-*"
+      - "**/Android/Sdk/system-images/android-*"
+    reason: "Android SDK components are versioned downloads such as old build-tools, NDKs, platforms, and emulator system images. They are usually reinstallable through SDK Manager, but may be intentionally pinned by a project, so Deep Clean keeps them review-only."
+    restore:
+      - "Open Android Studio SDK Manager and reinstall the required component."
+      - "sdkmanager '<package-name>'"
+
+  - id: avd-data
+    name: Android emulator device data
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.android/avd"
+    reason: "Android Virtual Devices may contain emulator disks, app state, test data, and local credentials. Nibble must not clean them by default."

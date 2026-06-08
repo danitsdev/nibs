@@ -18,7 +18,7 @@ type MascotFrame = [&'static str; 3];
 
 fn mascot_style(c: char, theme: &NibbleTheme) -> Style {
     match c {
-        '(' | ')' | '_' | '[' | ']' | '~' => Style::default()
+        '(' | ')' | '_' | '[' | ']' | '~' | 'W' => Style::default()
             .fg(theme.primary)
             .add_modifier(Modifier::BOLD),
         '|' | '/' | '\\' => Style::default()
@@ -28,7 +28,7 @@ fn mascot_style(c: char, theme: &NibbleTheme) -> Style {
             .fg(theme.accent)
             .add_modifier(Modifier::BOLD),
         'o' | 'O' | '-' | '^' | '<' | '>' => Style::default()
-            .fg(Color::White)
+            .fg(Color::Reset)
             .add_modifier(Modifier::BOLD),
         '.' | '*' | '!' => Style::default()
             .fg(theme.warning)
@@ -276,12 +276,12 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " Settings & Preferences ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "— Customize cleanup actions, themes, and behavior",
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             ),
         ]),
         Line::from(vec![Span::styled(
@@ -314,7 +314,9 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
     let option_items = [
         (
             "Cleanup Method",
-            if state.delete_directly {
+            if state.shred {
+                "Securely Shred (Zero Overwrite)"
+            } else if state.delete_directly {
                 "Delete Directly (Permanent)"
             } else {
                 "Move to Trash (Standard)"
@@ -332,19 +334,24 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
 
             let style = if is_selected {
                 Style::default()
-                    .bg(primary)
-                    .fg(Color::White)
+                    .bg(state.theme.select_bg)
+                    .fg(state.theme.select_fg)
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::White)
+                Style::default().fg(state.theme.ink)
+            };
+
+            let prefix_style = if is_selected {
+                Style::default()
+                    .fg(state.theme.select_fg)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(primary).add_modifier(Modifier::BOLD)
             };
 
             ListItem::new(vec![
                 Line::from(vec![
-                    Span::styled(
-                        prefix,
-                        Style::default().fg(primary).add_modifier(Modifier::BOLD),
-                    ),
+                    Span::styled(prefix, prefix_style),
                     Span::styled(format!("{}: ", name), style),
                     Span::styled(
                         *val,
@@ -352,7 +359,7 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
                             style
                         } else {
                             Style::default()
-                                .fg(Color::Cyan)
+                                .fg(state.theme.accent)
                                 .add_modifier(Modifier::BOLD)
                         },
                     ),
@@ -377,35 +384,50 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             Line::from(Span::styled(
                 "Cleanup Method",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(
-                "Choose whether Nibble should move files to the system trash or delete them permanently right away.",
+                "Choose whether Nibble should move files to standard system trash, delete them permanently, or securely shred them.",
             ),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     "  Move to Trash (Default): ",
                     Style::default()
-                        .fg(Color::Green)
+                        .fg(state.theme.success)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
                     "Safely moves files to standard system Trash. Highly recommended for safety.",
-                    Style::default().fg(Color::Gray),
+                    Style::default().fg(state.theme.ink),
                 ),
             ]),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     "  Delete Directly: ",
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(state.theme.error)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    "Deletes files permanently using file system unlink. Useful when cleanup path is not on the primary partition, or if you want to bypass Trash size limits.",
-                    Style::default().fg(Color::Gray),
+                    "Deletes files permanently using file system unlink. Useful to bypass Trash limits.",
+                    Style::default().fg(state.theme.ink),
+                ),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    "  Securely Shred: ",
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    "Overwrites files with zero bytes and flushes cache to disk before unlinking, making forensic recovery extremely difficult.",
+                    Style::default().fg(state.theme.ink),
                 ),
             ]),
         ],
@@ -414,7 +436,7 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             Line::from(Span::styled(
                 "Color Theme",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
@@ -424,11 +446,11 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
             Line::from(""),
             Line::from(Span::styled(
                 format!("  {} available themes", crate::theme::ALL_THEMES.len()),
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             )),
             Line::from(Span::styled(
                 "  The 'System' theme uses your terminal's native colors.",
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             )),
         ],
         _ => vec![],
@@ -455,7 +477,9 @@ fn draw_settings(state: &TuiState, frame: &mut Frame) {
         Span::styled("Toggle/Cycle │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Esc / Q ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Save & Back to Menu", Style::default().fg(Color::DarkGray)),
     ]);
@@ -469,17 +493,17 @@ pub fn draw(state: &mut TuiState, frame: &mut Frame) {
     match state.screen {
         TuiScreen::Home | TuiScreen::HomeConfirmTrash => draw_home(state, frame),
         TuiScreen::Wizard => draw_wizard(state, frame),
-        TuiScreen::Dashboard => draw_dashboard(state, frame),
-        TuiScreen::PathInput { is_analyze } => draw_path_input(state, is_analyze, frame),
+        TuiScreen::Dashboard | TuiScreen::SmartClean => draw_dashboard(state, frame),
         TuiScreen::AppUninstallSelector => draw_app_uninstall_selector(state, frame),
         TuiScreen::AppUninstallList => draw_app_uninstall_list(state, frame),
-        TuiScreen::DoctorReport => draw_doctor_report(state, frame),
         TuiScreen::Scanning => draw_scanning(state, frame),
         TuiScreen::Optimize => draw_optimize(state, frame),
         TuiScreen::Analyze => draw_analyze_integrated(state, frame),
         TuiScreen::Status => draw_status_integrated(state, frame),
         TuiScreen::Settings => draw_settings(state, frame),
         TuiScreen::Goodbye => draw_goodbye(state, frame),
+        TuiScreen::CleanComplete => draw_clean_complete(state, frame),
+        TuiScreen::TrashManager => draw_trash_manager(state, frame),
     }
 }
 
@@ -737,32 +761,45 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
 
             let style = if is_selected {
                 Style::default()
-                    .bg(primary)
-                    .fg(Color::White)
+                    .bg(state.theme.select_bg)
+                    .fg(state.theme.select_fg)
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::White)
+                Style::default().fg(state.theme.ink)
+            };
+
+            let (prefix_style, title_style, desc_style) = if is_selected {
+                (
+                    Style::default()
+                        .fg(state.theme.select_fg)
+                        .add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(state.theme.select_fg)
+                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(state.theme.select_fg),
+                )
+            } else {
+                (
+                    Style::default().fg(primary).add_modifier(Modifier::BOLD),
+                    Style::default().fg(state.theme.ink),
+                    Style::default().fg(Color::DarkGray),
+                )
             };
 
             ListItem::new(vec![
                 Line::from(vec![
-                    Span::styled(
-                        prefix,
-                        Style::default().fg(primary).add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(*title, style),
+                    Span::styled(prefix, prefix_style),
+                    Span::styled(*title, title_style),
                 ]),
-                Line::from(Span::styled(
-                    format!("    {}", desc),
-                    Style::default().fg(Color::DarkGray),
-                )),
+                Line::from(Span::styled(format!("    {}", desc), desc_style)),
             ])
+            .style(style)
         })
         .collect();
 
     frame.render_widget(List::new(items).block(menu_block), body_chunks[0]);
 
-    // Right Panel: Disk snapshot and cleanup defaults
+    // Right Panel: Today — live system state and last scan summary
     let stats_block = Block::default()
         .title(" Today ")
         .borders(Borders::ALL)
@@ -771,6 +808,7 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
 
     let mut stats_lines = Vec::new();
 
+    // Disk usage
     if let Some((mount, total, used, avail)) = get_home_disk_snapshot() {
         let pct = if total > 0 {
             (used as f64 / total as f64) * 100.0
@@ -780,13 +818,13 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
         let bar_len = ((pct / 10.0).round() as usize).min(10);
         stats_lines.push(Line::from(vec![
             Span::styled("  Mount   : ", Style::default().fg(Color::DarkGray)),
-            Span::styled(mount, Style::default().fg(Color::White)),
+            Span::styled(mount, Style::default().fg(state.theme.ink)),
         ]));
         stats_lines.push(Line::from(vec![
             Span::styled("  Free    : ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 format!("{} free of {}", format_size(avail), format_size(total)),
-                Style::default().fg(Color::White),
+                Style::default().fg(state.theme.ink),
             ),
         ]));
         stats_lines.push(Line::from(vec![
@@ -798,16 +836,74 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
                     " ".repeat(10 - bar_len),
                     pct
                 ),
-                Style::default().fg(Color::Green),
+                Style::default().fg(state.theme.success),
             ),
         ]));
     } else {
         stats_lines.push(Line::from(vec![
             Span::styled("  Mount   : ", Style::default().fg(Color::DarkGray)),
-            Span::styled("Unknown", Style::default().fg(Color::White)),
+            Span::styled("Unknown", Style::default().fg(state.theme.ink)),
         ]));
     }
 
+    // Last scan info
+    stats_lines.push(Line::from(""));
+    stats_lines.push(Line::from(Span::styled(
+        "  Last Scan",
+        Style::default()
+            .fg(state.theme.ink)
+            .add_modifier(Modifier::UNDERLINED),
+    )));
+    if let Some(last_time) = state.last_scan_time {
+        let ago = last_time.elapsed();
+        let ago_str = if ago.as_secs() < 60 {
+            format!("{}s ago", ago.as_secs())
+        } else if ago.as_secs() < 3600 {
+            format!("{}m ago", ago.as_secs() / 60)
+        } else {
+            format!(
+                "{}h {}m ago",
+                ago.as_secs() / 3600,
+                (ago.as_secs() % 3600) / 60
+            )
+        };
+        stats_lines.push(Line::from(vec![
+            Span::styled("    Time  : ", Style::default().fg(Color::DarkGray)),
+            Span::styled(ago_str, Style::default().fg(state.theme.accent)),
+        ]));
+        stats_lines.push(Line::from(vec![
+            Span::styled("    Items : ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("{} findings", state.last_scan_findings),
+                Style::default().fg(state.theme.ink),
+            ),
+        ]));
+        stats_lines.push(Line::from(vec![
+            Span::styled("    Safe  : ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("{} recommended", state.last_scan_recommended),
+                Style::default().fg(state.theme.success),
+            ),
+        ]));
+        stats_lines.push(Line::from(vec![
+            Span::styled("    Size  : ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format_size(state.last_scan_size),
+                Style::default().fg(state.theme.warning),
+            ),
+        ]));
+    } else {
+        stats_lines.push(Line::from(vec![
+            Span::styled("    ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                "No scan yet — start with Smart Clean",
+                Style::default().fg(state.theme.ink),
+            ),
+        ]));
+    }
+
+    // Trash summary
+    stats_lines.push(Line::from(""));
     let (trash_root, trash_count, trash_bytes) = get_user_trash_snapshot();
     stats_lines.push(Line::from(vec![
         Span::styled("  Trash   : ", Style::default().fg(Color::DarkGray)),
@@ -816,40 +912,39 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
                 Some(_) => format!("{} items / {}", trash_count, format_size(trash_bytes)),
                 None => "No home trash detected".to_string(),
             },
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(state.theme.warning),
         ),
     ]));
 
+    // Safety mode & clean defaults
     stats_lines.push(Line::from(""));
     stats_lines.push(Line::from(Span::styled(
-        "  Cleanup Defaults",
+        "  Safety & Defaults",
         Style::default()
-            .fg(Color::White)
+            .fg(state.theme.ink)
             .add_modifier(Modifier::UNDERLINED),
     )));
+    let safety_label = if state.delete_directly {
+        "Direct delete (permanent)"
+    } else {
+        "Trash routing (recoverable)"
+    };
     stats_lines.push(Line::from(vec![
-        Span::styled("    Mode   : ", Style::default().fg(Color::DarkGray)),
+        Span::styled("    Mode  : ", Style::default().fg(Color::DarkGray)),
+        Span::styled(safety_label, Style::default().fg(state.theme.success)),
+    ]));
+    stats_lines.push(Line::from(vec![
+        Span::styled("    Scope : ", Style::default().fg(Color::DarkGray)),
         Span::styled(
-            if state.delete_directly {
-                "Delete directly (Bypass system trash)"
-            } else {
-                "Move to system trash (FreeDesktop protocol)"
-            },
-            Style::default().fg(Color::Green),
+            "Home directory (safe paths only)",
+            Style::default().fg(state.theme.ink),
         ),
     ]));
     stats_lines.push(Line::from(vec![
-        Span::styled("    Search : ", Style::default().fg(Color::DarkGray)),
+        Span::styled("    Trash : ", Style::default().fg(Color::DarkGray)),
         Span::styled(
-            "Focused on caches, build artifacts, and remnants",
-            Style::default().fg(Color::White),
-        ),
-    ]));
-    stats_lines.push(Line::from(vec![
-        Span::styled("    Action : ", Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            "Clean Trash is one confirm away",
-            Style::default().fg(Color::White),
+            "Open manager to review/restore/empty",
+            Style::default().fg(state.theme.ink),
         ),
     ]));
 
@@ -924,62 +1019,6 @@ fn draw_home(state: &mut TuiState, frame: &mut Frame) {
     }
 }
 
-fn draw_path_input(state: &TuiState, is_analyze: bool, frame: &mut Frame) {
-    let area = frame.area();
-    let popup_area = centered_rect(60, 25, area);
-    frame.render_widget(Clear, popup_area);
-
-    let title = if is_analyze {
-        " Open Disk Usage Analyzer "
-    } else {
-        " Run Developer Scan "
-    };
-    let prompt = if is_analyze {
-        "Analyze path (default is '.'):"
-    } else {
-        "Scan path (default is '.'):"
-    };
-
-    let input_block = Block::default()
-        .title(title)
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(Color::Blue));
-
-    let lines = vec![
-        Line::from(""),
-        Line::from(Span::styled(prompt, Style::default().fg(Color::White))),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                " ❯ ",
-                Style::default()
-                    .fg(Color::Blue)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                &state.input_buffer,
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("█", Style::default().fg(Color::Blue)), // Cursor simulation
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            " Press Enter to proceed, Esc to go back ",
-            Style::default().fg(Color::DarkGray),
-        )),
-    ];
-
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(input_block)
-            .alignment(Alignment::Center),
-        popup_area,
-    );
-}
-
 fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
     let area = frame.area();
     let chunks = Layout::default()
@@ -1008,12 +1047,12 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
             Span::styled(
                 " Smart App Uninstaller ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "— Unified Linux Uninstaller & Remnants Cleaner",
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             ),
         ]),
         Line::from(vec![
@@ -1023,7 +1062,9 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
             ),
             Span::styled(
                 state.installed_apps.len().to_string(),
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 " │ Select an app to search for left-over directories, configuration files and shortcuts.",
@@ -1079,24 +1120,39 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
 
                 let style = if is_selected {
                     Style::default()
-                        .bg(primary)
-                        .fg(Color::White)
+                        .bg(state.theme.select_bg)
+                        .fg(state.theme.select_fg)
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(state.theme.ink)
                 };
 
-                ListItem::new(Line::from(vec![
-                    Span::styled(
-                        prefix,
+                let (prefix_style, name_style, exec_style) = if is_selected {
+                    (
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(state.theme.select_fg),
+                    )
+                } else {
+                    (
                         Style::default().fg(accent).add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(format!("{}  ", app.name), style),
-                    Span::styled(
-                        format!("({})", app.exec),
+                        Style::default().fg(state.theme.ink),
                         Style::default().fg(Color::DarkGray),
-                    ),
-                ]))
+                    )
+                };
+
+                ListItem::new(
+                    Line::from(vec![
+                        Span::styled(prefix, prefix_style),
+                        Span::styled(format!("{}  ", app.name), name_style),
+                        Span::styled(format!("({})", app.exec), exec_style),
+                    ])
+                    .style(style),
+                )
             })
             .collect();
 
@@ -1127,13 +1183,13 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     app_name,
                     Style::default()
-                        .fg(Color::White)
+                        .fg(state.theme.ink)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
             Line::from(vec![
                 Span::styled("Executable: ", Style::default().fg(Color::DarkGray)),
-                Span::styled(exec_name, Style::default().fg(Color::Cyan)),
+                Span::styled(exec_name, Style::default().fg(state.theme.accent)),
             ]),
             Line::from(""),
             Line::from(Span::styled(
@@ -1142,17 +1198,17 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
             )),
             Line::from(Span::styled(
                 desktop_file_str,
-                Style::default().fg(Color::White),
+                Style::default().fg(state.theme.ink),
             )),
             Line::from(""),
             Line::from(Span::styled(
                 "Press ENTER to inspect and checklist leftovers/remnants before trashing them.",
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(state.theme.warning),
             )),
             Line::from(""),
             Line::from(Span::styled(
                 "Press C to immediately request trashing of ALL located remnants for this application.",
-                Style::default().fg(Color::Red),
+                Style::default().fg(state.theme.error),
             )),
         ]
     } else {
@@ -1168,7 +1224,7 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
     // --- RENDER FOOTER ---
     let footer_text = Line::from(vec![Span::styled(
         format!(" {} ", state.status_message),
-        Style::default().fg(Color::White),
+        Style::default().fg(state.theme.ink),
     )]);
     let footer_block = Block::default()
         .borders(Borders::TOP)
@@ -1177,21 +1233,27 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
             Span::styled(
                 " Enter ",
                 Style::default()
-                    .fg(Color::Cyan)
+                    .fg(state.theme.accent)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled("Inspect Leftovers │ ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 " C ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "Clean All Remnants │ ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 " Esc ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled("Back to Menu", Style::default().fg(Color::DarkGray)),
         ]));
@@ -1212,7 +1274,9 @@ fn draw_app_uninstall_selector(state: &mut TuiState, frame: &mut Frame) {
             Line::from(""),
             Line::from(vec![Span::styled(
                 "[!] CONFIRM FULL APP REMOVAL",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(format!(
@@ -1250,12 +1314,12 @@ fn draw_scanning(state: &mut TuiState, frame: &mut Frame) {
 
     // --- Color palette ---
     let c_border = state.theme.primary;
-    let c_label = Color::Gray;
-    let c_value = Color::White;
-    let c_accent = Color::LightBlue;
-    let c_green = Color::LightGreen;
-    let c_amber = Color::LightYellow;
-    let c_dim = Color::Gray;
+    let c_label = state.theme.ink;
+    let c_value = state.theme.ink;
+    let c_accent = state.theme.accent;
+    let c_green = state.theme.success;
+    let c_amber = state.theme.warning;
+    let c_dim = state.theme.ink;
     let c_shortcut_bg = Color::DarkGray;
 
     let popup_area = centered_rect_fixed(80, 11, area);
@@ -1417,7 +1481,7 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " Smart Uninstaller remnants checklist ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
@@ -1429,7 +1493,9 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
             Span::styled("  Selected : ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 format!("{}/{}", selected_count, total_leftovers),
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 " │ Space to reclaim: ",
@@ -1438,7 +1504,7 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 format_size(total_selected_size),
                 Style::default()
-                    .fg(Color::Green)
+                    .fg(state.theme.success)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
@@ -1488,28 +1554,42 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
 
                 let item_style = if idx == state.selected_idx {
                     Style::default()
-                        .bg(primary)
-                        .fg(Color::White)
+                        .bg(state.theme.select_bg)
+                        .fg(state.theme.select_fg)
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(state.theme.ink)
                 };
 
-                ListItem::new(Line::from(vec![
-                    Span::styled(
-                        format!("{}  ", checkbox),
+                let is_selected = idx == state.selected_idx;
+                let (check_style, name_style, size_style) = if is_selected {
+                    (
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(state.theme.select_fg),
+                    )
+                } else {
+                    (
                         if is_checked {
-                            Style::default().fg(Color::Green)
+                            Style::default().fg(state.theme.success)
                         } else {
                             Style::default().fg(Color::DarkGray)
                         },
-                    ),
-                    Span::styled(name_label, item_style),
-                    Span::styled(
-                        format!("  {}", size_label),
+                        Style::default().fg(state.theme.ink),
                         Style::default().fg(Color::DarkGray),
-                    ),
-                ]))
+                    )
+                };
+
+                ListItem::new(
+                    Line::from(vec![
+                        Span::styled(format!("{}  ", checkbox), check_style),
+                        Span::styled(name_label, name_style),
+                        Span::styled(format!("  {}", size_label), size_style),
+                    ])
+                    .style(item_style),
+                )
             })
             .collect();
 
@@ -1545,19 +1625,19 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
                 Span::styled(
                     filename,
                     Style::default()
-                        .fg(Color::White)
+                        .fg(state.theme.ink)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
             Line::from(vec![
                 Span::styled("Size: ", Style::default().fg(Color::DarkGray)),
-                Span::styled(format_size(*size), Style::default().fg(Color::Green)),
+                Span::styled(format_size(*size), Style::default().fg(state.theme.success)),
             ]),
             Line::from(vec![
                 Span::styled("Type: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     if path.is_dir() { "Directory" } else { "File" },
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(state.theme.accent),
                 ),
             ]),
             Line::from(""),
@@ -1565,17 +1645,17 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
                 "Full System Path:",
                 Style::default().fg(Color::DarkGray),
             )),
-            Line::from(Span::styled(path_str, Style::default().fg(Color::White))),
+            Line::from(Span::styled(path_str, Style::default().fg(state.theme.ink))),
             Line::from(""),
         ];
 
         // Specific warning context for shortcut launchers
         if is_shortcut {
-            details.push(Line::from(Span::styled("[Shortcut Launcher] This is a desktop system shortcut file. Deleting this cleans the app from launcher dashboards.", Style::default().fg(Color::Yellow))));
+            details.push(Line::from(Span::styled("[Shortcut Launcher] This is a desktop system shortcut file. Deleting this cleans the app from launcher dashboards.", Style::default().fg(state.theme.warning))));
         } else if is_config {
-            details.push(Line::from(Span::styled("[User Preferences] Contains user preferences, theme configuration, or saved logins for the application.", Style::default().fg(Color::Cyan))));
+            details.push(Line::from(Span::styled("[User Preferences] Contains user preferences, theme configuration, or saved logins for the application.", Style::default().fg(state.theme.accent))));
         } else if is_cache {
-            details.push(Line::from(Span::styled("[Application Cache] Cache registry directory. Safe to clean, but will re-download assets on reinstall.", Style::default().fg(Color::Green))));
+            details.push(Line::from(Span::styled("[Application Cache] Cache registry directory. Safe to clean, but will re-download assets on reinstall.", Style::default().fg(state.theme.success))));
         }
 
         details
@@ -1592,7 +1672,7 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
     // --- RENDER FOOTER ---
     let footer_text = Line::from(vec![Span::styled(
         format!(" {} ", state.status_message),
-        Style::default().fg(Color::White),
+        Style::default().fg(state.theme.ink),
     )]);
     let footer_block = Block::default()
         .borders(Borders::TOP)
@@ -1601,28 +1681,34 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " Space ",
                 Style::default()
-                    .fg(Color::Cyan)
+                    .fg(state.theme.accent)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled("Toggle │ ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 " A ",
                 Style::default()
-                    .fg(Color::Cyan)
+                    .fg(state.theme.accent)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled("Toggle All │ ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 " C ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "Trash Selected │ ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 " Esc ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled("Back to Menu", Style::default().fg(Color::DarkGray)),
         ]));
@@ -1637,7 +1723,9 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
             Line::from(""),
             Line::from(vec![Span::styled(
                 "[!] CONFIRM UNINSTALL CLEAN",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(
@@ -1651,7 +1739,7 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
                     format_size(total_selected_size)
                 ),
                 Style::default()
-                    .fg(Color::Cyan)
+                    .fg(state.theme.accent)
                     .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
@@ -1678,211 +1766,6 @@ fn draw_app_uninstall_list(state: &TuiState, frame: &mut Frame) {
 
         frame.render_widget(popup_widget, popup_area);
     }
-}
-
-fn draw_doctor_report(state: &TuiState, frame: &mut Frame) {
-    let area = frame.area();
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(5), // Header
-            Constraint::Min(8),    // Body
-            Constraint::Length(3), // Footer
-        ])
-        .split(area);
-
-    // --- RENDER HEADER ---
-    let header_block = Block::default()
-        .borders(Borders::BOTTOM)
-        .border_style(Style::default().fg(Color::DarkGray));
-    let header_inner = header_block.inner(chunks[0]);
-    frame.render_widget(header_block, chunks[0]);
-
-    let header_split = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(30), Constraint::Length(MASCOT_WIDTH + 4)])
-        .split(header_inner);
-
-    let header_lines = vec![
-        Line::from(vec![
-            Span::styled(
-                " Nibble Environment Doctor ",
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                "— System Diagnostic Checkup",
-                Style::default().fg(Color::DarkGray),
-            ),
-        ]),
-        Line::from(
-            "This report validates system configuration, service states, cache sizes, and write accesses.",
-        ),
-    ];
-    frame.render_widget(Paragraph::new(header_lines), header_split[0]);
-
-    let elapsed_ms = state.start_time.elapsed().as_millis() as u64;
-    let mascot_lines = get_mascot_lines(elapsed_ms, "doc", state.theme);
-    render_mascot_with_margins(frame, header_split[1], mascot_lines);
-
-    // --- RENDER BODY LAYOUT ---
-    let body_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(60), // Left: checks list
-            Constraint::Percentage(40), // Right: check description/tips
-        ])
-        .split(chunks[1]);
-
-    let primary = state.theme.primary;
-
-    // Left checks list
-    let list_block = Block::default()
-        .title(" Diagnostic Checks ")
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(primary));
-
-    if state.doctor_results.is_empty() {
-        let empty_widget = Paragraph::new("\n\n Diagnostics complete. No checks registered.")
-            .alignment(Alignment::Center);
-        frame.render_widget(empty_widget.block(list_block), body_chunks[0]);
-    } else {
-        let items: Vec<ListItem> = state
-            .doctor_results
-            .iter()
-            .enumerate()
-            .map(|(idx, res)| {
-                let status_badge = match res.status {
-                    crate::doctor::CheckStatus::Ok => "[PASS]",
-                    crate::doctor::CheckStatus::Warning => "[WARN]",
-                    crate::doctor::CheckStatus::Error => "[FAIL]",
-                };
-                let badge_color = match res.status {
-                    crate::doctor::CheckStatus::Ok => Color::Green,
-                    crate::doctor::CheckStatus::Warning => Color::Yellow,
-                    crate::doctor::CheckStatus::Error => Color::Red,
-                };
-
-                let item_style = if idx == state.doctor_selected_idx {
-                    Style::default()
-                        .bg(primary)
-                        .fg(Color::White)
-                        .add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-
-                ListItem::new(Line::from(vec![
-                    Span::styled(
-                        format!("{:<8} ", status_badge),
-                        Style::default()
-                            .fg(badge_color)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(&res.name, item_style),
-                ]))
-            })
-            .collect();
-
-        let mut list_state = ListState::default();
-        list_state.select(Some(state.doctor_selected_idx));
-        frame.render_stateful_widget(
-            List::new(items).block(list_block),
-            body_chunks[0],
-            &mut list_state,
-        );
-    }
-
-    // Right detail pane
-    let detail_block = Block::default()
-        .title(" Check Details & Advice ")
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(Color::DarkGray));
-
-    let detail_text = if let Some(res) = state.doctor_results.get(state.doctor_selected_idx) {
-        let status_color = match res.status {
-            crate::doctor::CheckStatus::Ok => Color::Green,
-            crate::doctor::CheckStatus::Warning => Color::Yellow,
-            crate::doctor::CheckStatus::Error => Color::Red,
-        };
-        let badge_name = match res.status {
-            crate::doctor::CheckStatus::Ok => "System status looks optimal.",
-            crate::doctor::CheckStatus::Warning => {
-                "Warning: We suggest optimizing or vacuuming this directory/service."
-            }
-            crate::doctor::CheckStatus::Error => {
-                "Error: Critical filesystem issue or missing daemon permissions."
-            }
-        };
-
-        vec![
-            Line::from(vec![
-                Span::styled("Check      : ", Style::default().fg(Color::DarkGray)),
-                Span::styled(
-                    &res.name,
-                    Style::default()
-                        .fg(Color::White)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled("Status     : ", Style::default().fg(Color::DarkGray)),
-                Span::styled(
-                    res.status.to_string(),
-                    Style::default()
-                        .fg(status_color)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Details:",
-                Style::default().fg(Color::DarkGray),
-            )),
-            Line::from(Span::styled(&res.detail, Style::default().fg(Color::White))),
-            Line::from(""),
-            Line::from(Span::styled(badge_name, Style::default().fg(status_color))),
-        ]
-    } else {
-        vec![Line::from("\n Select a check to view diagnostic tips.")]
-    };
-
-    frame.render_widget(
-        Paragraph::new(detail_text)
-            .block(detail_block)
-            .wrap(Wrap { trim: true }),
-        body_chunks[1],
-    );
-
-    // --- RENDER FOOTER ---
-    let footer_text = Line::from(vec![Span::styled(
-        format!(" {} ", state.status_message),
-        Style::default().fg(Color::White),
-    )]);
-    let footer_block = Block::default()
-        .borders(Borders::TOP)
-        .border_style(Style::default().fg(Color::DarkGray))
-        .title(Line::from(vec![
-            Span::styled(
-                " Arrows / JK ",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                "Scroll Diagnostics │ ",
-                Style::default().fg(Color::DarkGray),
-            ),
-            Span::styled(
-                " Esc / Q ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("Back to Menu", Style::default().fg(Color::DarkGray)),
-        ]));
-    frame.render_widget(Paragraph::new(footer_text).block(footer_block), chunks[2]);
 }
 
 fn draw_wizard(state: &TuiState, frame: &mut Frame) {
@@ -1930,16 +1813,16 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 total_reclaimable.clone(),
                 Style::default()
-                    .fg(Color::Green)
+                    .fg(state.theme.success)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw("."),
         ]),
         Line::from(vec![
-            Span::styled("💡 Fun Fact: ", Style::default().fg(Color::Yellow)),
+            Span::styled("💡 Fun Fact: ", Style::default().fg(state.theme.warning)),
             Span::styled(
                 format!("This reclaimed space is {}", get_fun_analogy(total_bytes)),
-                Style::default().fg(Color::White),
+                Style::default().fg(state.theme.ink),
             ),
         ]),
         Line::from("Choose how assertive Nibble should be for this cleanup pass:"),
@@ -1970,7 +1853,7 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
         let style = if is_selected {
             Style::default().fg(primary).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(state.theme.ink)
         };
 
         wizard_lines.push(Line::from(vec![
@@ -1991,7 +1874,7 @@ fn draw_wizard(state: &TuiState, frame: &mut Frame) {
     wizard_lines.push(Line::from(""));
     wizard_lines.push(Line::from(vec![Span::styled(
         " ↑/↓ or j/k: Select Profile  │  Enter: Proceed  │  q: Quit ",
-        Style::default().bg(Color::DarkGray).fg(Color::White),
+        Style::default().bg(Color::DarkGray).fg(state.theme.ink),
     )]));
 
     let wizard_widget = Paragraph::new(wizard_lines).wrap(Wrap { trim: true });
@@ -2009,6 +1892,8 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
         ])
         .split(area);
 
+    let is_smart = state.screen == TuiScreen::SmartClean;
+
     // --- RENDER HEADER ---
     let total_bytes: u64 = state.findings.iter().map(|f| f.size_bytes).sum();
     let total_reclaimable = format_size(total_bytes);
@@ -2017,110 +1902,210 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
     let (recommended_count, recommended_size) = state.recommended_summary();
     let visible_count = state.filter_count();
 
-    let scope_name = match &state.scope {
-        crate::safety::ScanScope::ProjectScan(_) => "Project Scan",
-        crate::safety::ScanScope::DirectoryScan(_) => "Directory Scan",
-        crate::safety::ScanScope::SystemSafeScan => "System Safe Scan [!]",
-    };
+    if is_smart {
+        // Calculate breakdown for Smart Clean
+        let mut needs_review_bytes = 0u64;
+        let mut protected_bytes = 0u64;
+        for f in &state.findings {
+            match f.risk {
+                crate::findings::RiskLevel::Review => needs_review_bytes += f.size_bytes,
+                crate::findings::RiskLevel::Risky | crate::findings::RiskLevel::Info => {
+                    protected_bytes += f.size_bytes
+                }
+                _ => {}
+            }
+        }
+        let potential_cleanup = total_bytes.saturating_sub(protected_bytes);
 
-    let header_block = Block::default()
-        .borders(Borders::BOTTOM)
-        .border_style(Style::default().fg(Color::DarkGray));
-    let header_inner = header_block.inner(chunks[0]);
-    frame.render_widget(header_block, chunks[0]);
+        let header_block = Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(Style::default().fg(state.theme.primary));
+        let header_inner = header_block.inner(chunks[0]);
+        frame.render_widget(header_block, chunks[0]);
 
-    let header_split = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(30), Constraint::Length(MASCOT_WIDTH + 4)])
-        .split(header_inner);
+        let header_split = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(30), Constraint::Length(MASCOT_WIDTH + 4)])
+            .split(header_inner);
 
-    let header_text = vec![
-        Line::from(vec![
-            Span::styled(
-                " Nibble ",
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                "— Terminal Cleaner for Developers",
-                Style::default().fg(Color::Gray),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("Scope: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                format!("{} ", scope_name),
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("│ Path: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                state.target_path.to_string_lossy().to_string(),
-                Style::default().fg(Color::White),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("Reclaimable Space: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                total_reclaimable,
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" │ Warnings: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                state.warnings.len().to_string(),
-                Style::default().fg(if state.warnings.is_empty() {
-                    Color::Gray
-                } else {
-                    Color::Red
-                }),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("Filter: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                format!(
-                    "{} {} ({}/{})",
-                    state.finding_view_mode.label(),
-                    state.finding_filter.label(),
-                    visible_count,
-                    state.findings.len()
+        let header_text = vec![
+            Line::from(vec![
+                Span::styled(
+                    " Smart Clean ",
+                    Style::default()
+                        .fg(state.theme.primary)
+                        .add_modifier(Modifier::BOLD),
                 ),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" │ Recommended: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                format!("{} / {}", recommended_count, format_size(recommended_size)),
-                Style::default().fg(Color::Green),
-            ),
-            Span::styled(" │ Selected: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                format!("{} / {}", selected_count, format_size(selected_size)),
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
-    ];
+                Span::styled(
+                    "— safe junk across apps, caches, packages and projects",
+                    Style::default().fg(state.theme.ink),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Potential cleanup  ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{}  ", format_size(potential_cleanup)),
+                    Style::default()
+                        .fg(state.theme.ink)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("│ Recommended  ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{}  ", format_size(recommended_size)),
+                    Style::default()
+                        .fg(state.theme.success)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("│ Needs review  ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{}  ", format_size(needs_review_bytes)),
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("│ Protected  ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format_size(protected_bytes),
+                    Style::default()
+                        .fg(state.theme.error)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Selected: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{} / {}  ", selected_count, format_size(selected_size)),
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("│ Filter: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!(
+                        "{} {} ({}/{})",
+                        state.finding_view_mode.label(),
+                        state.finding_filter.label(),
+                        visible_count,
+                        state.findings.len()
+                    ),
+                    Style::default()
+                        .fg(state.theme.accent)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+        ];
+        let header_widget = Paragraph::new(header_text);
+        frame.render_widget(header_widget, header_split[0]);
 
-    let header_widget = Paragraph::new(header_text);
-    frame.render_widget(header_widget, header_split[0]);
-
-    let mascot_state = if state.findings.is_empty() {
-        "happy"
+        let mascot_lines = get_mascot_lines(
+            state.start_time.elapsed().as_millis() as u64,
+            "sweeping",
+            state.theme,
+        );
+        render_mascot_with_margins(frame, header_split[1], mascot_lines);
     } else {
-        "sweeping"
-    };
-    let elapsed_ms = state.start_time.elapsed().as_millis() as u64;
-    let mascot_lines = get_mascot_lines(elapsed_ms, mascot_state, state.theme);
-    render_mascot_with_margins(frame, header_split[1], mascot_lines);
+        let scope_name = match &state.scope {
+            crate::safety::ScanScope::ProjectScan(_) => "Project Scan",
+            crate::safety::ScanScope::DirectoryScan(_) => "Directory Scan",
+            crate::safety::ScanScope::SystemSafeScan => "System Safe Scan [!]",
+        };
 
-    // --- RENDER BODY ---
+        let header_block = Block::default()
+            .borders(Borders::BOTTOM)
+            .border_style(Style::default().fg(Color::DarkGray));
+        let header_inner = header_block.inner(chunks[0]);
+        frame.render_widget(header_block, chunks[0]);
+
+        let header_split = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(30), Constraint::Length(MASCOT_WIDTH + 4)])
+            .split(header_inner);
+
+        let header_text = vec![
+            Line::from(vec![
+                Span::styled(
+                    " Nibble ",
+                    Style::default()
+                        .fg(state.theme.ink)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    "— Terminal Cleaner for Developers",
+                    Style::default().fg(state.theme.ink),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Scope: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{} ", scope_name),
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("│ Path: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    state.target_path.to_string_lossy().to_string(),
+                    Style::default().fg(state.theme.ink),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Reclaimable Space: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    total_reclaimable,
+                    Style::default()
+                        .fg(state.theme.success)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(" │ Warnings: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    state.warnings.len().to_string(),
+                    Style::default().fg(if state.warnings.is_empty() {
+                        state.theme.ink
+                    } else {
+                        state.theme.error
+                    }),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Filter: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!(
+                        "{} {} ({}/{})",
+                        state.finding_view_mode.label(),
+                        state.finding_filter.label(),
+                        visible_count,
+                        state.findings.len()
+                    ),
+                    Style::default()
+                        .fg(state.theme.accent)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(" │ Recommended: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{} / {}", recommended_count, format_size(recommended_size)),
+                    Style::default().fg(state.theme.success),
+                ),
+                Span::styled(" │ Selected: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!("{} / {}", selected_count, format_size(selected_size)),
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+        ];
+        let header_widget = Paragraph::new(header_text);
+        frame.render_widget(header_widget, header_split[0]);
+
+        let mascot_state = if state.findings.is_empty() {
+            "happy"
+        } else {
+            "sweeping"
+        };
+        let elapsed_ms = state.start_time.elapsed().as_millis() as u64;
+        let mascot_lines = get_mascot_lines(elapsed_ms, mascot_state, state.theme);
+        render_mascot_with_margins(frame, header_split[1], mascot_lines);
+    }
     let body_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -2165,47 +2150,59 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 let is_checked = state.selected_findings.contains(idx);
                 let checkbox = if is_checked { "[x]" } else { "[ ]" };
                 let risk_color = match finding.risk {
-                    RiskLevel::Safe => Color::Green,
-                    RiskLevel::Review => Color::Yellow,
-                    RiskLevel::Risky => Color::Red,
-                    RiskLevel::Info => Color::Blue,
+                    RiskLevel::Safe => state.theme.success,
+                    RiskLevel::Review => state.theme.warning,
+                    RiskLevel::Risky => state.theme.error,
+                    RiskLevel::Info => state.theme.info,
                 };
                 let risk_badge = format!("[{}]", finding.risk);
                 let size_str = format!("({})", format_size(finding.size_bytes));
                 let display_path = get_relative_display_path(&finding.path, &state.target_path);
-                let primary = state.theme.primary;
+
                 let style = if *idx == state.selected_idx {
                     Style::default()
-                        .bg(primary)
-                        .fg(Color::White)
+                        .bg(state.theme.select_bg)
+                        .fg(state.theme.select_fg)
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(state.theme.ink)
                 };
 
-                ListItem::new(Line::from(vec![
-                    Span::styled(
-                        format!("{}  ", checkbox),
+                let is_selected = *idx == state.selected_idx;
+                let (check_style, risk_style, rule_style, path_style, size_style) = if is_selected {
+                    (
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default().fg(state.theme.select_fg),
+                    )
+                } else {
+                    (
                         if is_checked {
-                            Style::default().fg(Color::Green)
+                            Style::default().fg(state.theme.success)
                         } else {
                             Style::default().fg(Color::DarkGray)
                         },
-                    ),
-                    Span::styled(
-                        format!("{:<8} ", risk_badge),
-                        Style::default().fg(risk_color),
-                    ),
-                    Span::styled(
-                        format!("{}  ", finding.rule_name),
+                        Style::default().fg(risk_color).add_modifier(Modifier::BOLD),
                         Style::default().fg(Color::DarkGray),
-                    ),
-                    Span::styled(display_path, style),
-                    Span::styled(
-                        format!("  {}", size_str),
+                        Style::default().fg(state.theme.ink),
                         Style::default().fg(Color::DarkGray),
-                    ),
-                ]))
+                    )
+                };
+
+                ListItem::new(
+                    Line::from(vec![
+                        Span::styled(format!("{}  ", checkbox), check_style),
+                        Span::styled(format!("{:<8} ", risk_badge), risk_style),
+                        Span::styled(format!("{}  ", finding.rule_name), rule_style),
+                        Span::styled(display_path, path_style),
+                        Span::styled(format!("  {}", size_str), size_style),
+                    ])
+                    .style(style),
+                )
             })
             .collect();
 
@@ -2244,10 +2241,10 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                     .sum();
 
                 let risk_color = match finding.risk {
-                    RiskLevel::Safe => Color::Green,
-                    RiskLevel::Review => Color::Yellow,
-                    RiskLevel::Risky => Color::Red,
-                    RiskLevel::Info => Color::Blue,
+                    RiskLevel::Safe => state.theme.success,
+                    RiskLevel::Review => state.theme.warning,
+                    RiskLevel::Risky => state.theme.error,
+                    RiskLevel::Info => state.theme.info,
                 };
 
                 let risk_badge = format!("[{}]", finding.risk);
@@ -2258,36 +2255,52 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                     format!("{} paths", group.len())
                 };
 
-                let primary = state.theme.primary;
                 let style = if group.contains(&state.selected_idx) {
                     Style::default()
-                        .bg(primary)
-                        .fg(Color::White)
+                        .bg(state.theme.select_bg)
+                        .fg(state.theme.select_fg)
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(state.theme.ink)
                 };
 
-                ListItem::new(Line::from(vec![
-                    Span::styled(
-                        format!("{}  ", checkbox),
+                let is_selected = group.contains(&state.selected_idx);
+                let (check_style, risk_style, rule_style, path_style, size_style) = if is_selected {
+                    (
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(state.theme.select_fg)
+                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(state.theme.select_fg),
+                        Style::default().fg(state.theme.select_fg),
+                    )
+                } else {
+                    (
                         if selected_count > 0 {
-                            Style::default().fg(Color::Green)
+                            Style::default().fg(state.theme.success)
                         } else {
                             Style::default().fg(Color::DarkGray)
                         },
-                    ),
-                    Span::styled(
-                        format!("{:<8} ", risk_badge),
-                        Style::default().fg(risk_color),
-                    ),
-                    Span::styled(format!("{}  ", finding.rule_name), style),
-                    Span::styled(display_path, Style::default().fg(Color::DarkGray)),
-                    Span::styled(
-                        format!("  {}", size_str),
+                        Style::default().fg(risk_color).add_modifier(Modifier::BOLD),
+                        Style::default().fg(state.theme.ink),
                         Style::default().fg(Color::DarkGray),
-                    ),
-                ]))
+                        Style::default().fg(Color::DarkGray),
+                    )
+                };
+
+                ListItem::new(
+                    Line::from(vec![
+                        Span::styled(format!("{}  ", checkbox), check_style),
+                        Span::styled(format!("{:<8} ", risk_badge), risk_style),
+                        Span::styled(format!("{}  ", finding.rule_name), rule_style),
+                        Span::styled(display_path, path_style),
+                        Span::styled(format!("  {}", size_str), size_style),
+                    ])
+                    .style(style),
+                )
             })
             .collect();
 
@@ -2348,7 +2361,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     &finding.rule_id,
                     Style::default()
-                        .fg(Color::Cyan)
+                        .fg(state.theme.accent)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]));
@@ -2357,7 +2370,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     &finding.rule_name,
                     Style::default()
-                        .fg(Color::White)
+                        .fg(state.theme.ink)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]));
@@ -2365,7 +2378,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled("Default Action: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     finding.default_action.as_deref().unwrap_or("review"),
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(state.theme.warning),
                 ),
             ]));
             detail_lines.push(Line::from(vec![
@@ -2377,19 +2390,19 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                         selected_in_group,
                         format_size(group_size)
                     ),
-                    Style::default().fg(Color::Green),
+                    Style::default().fg(state.theme.success),
                 ),
             ]));
             detail_lines.push(Line::from(""));
             detail_lines.push(Line::from(Span::styled(
                 "Reason for Cleanup:",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::UNDERLINED),
             )));
             detail_lines.push(Line::from(Span::styled(
                 &finding.reason,
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             )));
             detail_lines.push(Line::from(""));
 
@@ -2397,13 +2410,13 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 detail_lines.push(Line::from(Span::styled(
                     "How to Rebuild/Restore:",
                     Style::default()
-                        .fg(Color::White)
+                        .fg(state.theme.ink)
                         .add_modifier(Modifier::UNDERLINED),
                 )));
                 for cmd in restores {
                     detail_lines.push(Line::from(Span::styled(
                         format!("  $ {}", cmd),
-                        Style::default().fg(Color::Yellow),
+                        Style::default().fg(state.theme.warning),
                     )));
                 }
             } else {
@@ -2417,7 +2430,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
             detail_lines.push(Line::from(Span::styled(
                 "Matched Paths:",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::UNDERLINED),
             )));
             for idx in group.iter().take(8) {
@@ -2425,7 +2438,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                     get_relative_display_path(&state.findings[*idx].path, &state.target_path);
                 detail_lines.push(Line::from(Span::styled(
                     format!("  {}", path),
-                    Style::default().fg(Color::Gray),
+                    Style::default().fg(state.theme.ink),
                 )));
             }
             if group.len() > 8 {
@@ -2439,20 +2452,20 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled("Group: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     format!("{} ({})", finding.rule_name, finding.rule_id),
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(state.theme.accent),
                 ),
             ]));
             if let Some(cleaner_name) = &finding.cleaner_name {
                 detail_lines.push(Line::from(vec![
                     Span::styled("Cleaner: ", Style::default().fg(Color::DarkGray)),
-                    Span::styled(cleaner_name, Style::default().fg(Color::White)),
+                    Span::styled(cleaner_name, Style::default().fg(state.theme.ink)),
                 ]));
             }
             detail_lines.push(Line::from(vec![
                 Span::styled("Category: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     finding.category.to_string(),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(state.theme.ink),
                 ),
             ]));
             if let Some(safety_class) = finding.safety_class {
@@ -2461,11 +2474,11 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                     Span::styled(
                         safety_class.to_string(),
                         Style::default().fg(match safety_class {
-                            crate::findings::SafetyClass::Safe => Color::Green,
-                            crate::findings::SafetyClass::UsuallySafe => Color::LightGreen,
-                            crate::findings::SafetyClass::Rebuildable => Color::Yellow,
-                            crate::findings::SafetyClass::UserData => Color::Yellow,
-                            crate::findings::SafetyClass::SecretOrAuth => Color::Red,
+                            crate::findings::SafetyClass::Safe => state.theme.success,
+                            crate::findings::SafetyClass::UsuallySafe => state.theme.success,
+                            crate::findings::SafetyClass::Rebuildable => state.theme.warning,
+                            crate::findings::SafetyClass::UserData => state.theme.warning,
+                            crate::findings::SafetyClass::SecretOrAuth => state.theme.error,
                         }),
                     ),
                 ]));
@@ -2475,47 +2488,40 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     finding.risk.to_string(),
                     Style::default().fg(match finding.risk {
-                        RiskLevel::Safe => Color::Green,
-                        RiskLevel::Review => Color::Yellow,
-                        RiskLevel::Risky => Color::Red,
-                        RiskLevel::Info => Color::Blue,
+                        RiskLevel::Safe => state.theme.success,
+                        RiskLevel::Review => state.theme.warning,
+                        RiskLevel::Risky => state.theme.error,
+                        RiskLevel::Info => state.theme.info,
                     }),
                 ),
             ]));
             detail_lines.push(Line::from(vec![
                 Span::styled("Size: ", Style::default().fg(Color::DarkGray)),
-                Span::styled(format_size(group_size), Style::default().fg(Color::Green)),
+                Span::styled(
+                    format_size(group_size),
+                    Style::default().fg(state.theme.success),
+                ),
             ]));
             detail_lines.push(Line::from(vec![
                 Span::styled("Paths: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     format!("{} total, {} selected", group.len(), selected_in_group),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(state.theme.ink),
                 ),
             ]));
             detail_lines.push(Line::from(vec![
                 Span::styled("Default Action: ", Style::default().fg(Color::DarkGray)),
                 Span::styled(
                     finding.default_action.as_deref().unwrap_or("review"),
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(state.theme.warning),
                 ),
             ]));
-            if finding.block_if_running && !finding.running_processes.is_empty() {
-                detail_lines.push(Line::from(vec![
-                    Span::styled("App Running: ", Style::default().fg(Color::DarkGray)),
-                    Span::styled(
-                        finding.running_processes.join(", "),
-                        Style::default().fg(Color::Red),
-                    ),
-                ]));
-            }
-
             if let Some(mtime) = finding.last_modified {
                 detail_lines.push(Line::from(vec![
                     Span::styled("Last Modified: ", Style::default().fg(Color::DarkGray)),
                     Span::styled(
                         mtime.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
-                        Style::default().fg(Color::White),
+                        Style::default().fg(state.theme.ink),
                     ),
                 ]));
             }
@@ -2527,21 +2533,8 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
             )));
             detail_lines.push(Line::from(Span::styled(
                 &finding.reason,
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             )));
-            if let Some(ref kept) = finding.kept {
-                detail_lines.push(Line::from(""));
-                detail_lines.push(Line::from(Span::styled(
-                    "Kept:",
-                    Style::default().fg(Color::DarkGray),
-                )));
-                for item in kept.iter().take(5) {
-                    detail_lines.push(Line::from(vec![
-                        Span::styled("  - ", Style::default().fg(Color::DarkGray)),
-                        Span::styled(item.clone(), Style::default().fg(Color::Gray)),
-                    ]));
-                }
-            }
             if let Some(ref restores) = finding.restore {
                 detail_lines.push(Line::from(""));
                 detail_lines.push(Line::from(Span::styled(
@@ -2551,7 +2544,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 for cmd in restores {
                     detail_lines.push(Line::from(vec![
                         Span::styled("  $ ", Style::default().fg(Color::DarkGray)),
-                        Span::styled(cmd.clone(), Style::default().fg(Color::Yellow)),
+                        Span::styled(cmd.clone(), Style::default().fg(state.theme.warning)),
                     ]));
                 }
             }
@@ -2568,7 +2561,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                         format!("{:>9}  ", format_size(item.size_bytes)),
                         Style::default().fg(Color::DarkGray),
                     ),
-                    Span::styled(path, Style::default().fg(Color::White)),
+                    Span::styled(path, Style::default().fg(state.theme.ink)),
                 ]));
             }
             if group.len() > 10 {
@@ -2594,7 +2587,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
     let primary = state.theme.primary;
     let footer_text = Line::from(vec![Span::styled(
         format!(" {} ", state.status_message),
-        Style::default().fg(Color::White),
+        Style::default().fg(state.theme.ink),
     )]);
 
     let cleanup_label = if state.dry_run {
@@ -2611,7 +2604,9 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
         .title(Line::from(vec![
             Span::styled(
                 " Esc / Q ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 if state.is_home_mode {
@@ -2646,11 +2641,15 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
             Span::styled("View │ ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 " C ",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 cleanup_label,
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]));
 
@@ -2680,7 +2679,9 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
             Line::from(""),
             Line::from(vec![Span::styled(
                 "[!] CONFIRM CLEANUP ACTION",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state.theme.error)
+                    .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
@@ -2688,7 +2689,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     cleanup_type,
                     Style::default()
-                        .fg(Color::Yellow)
+                        .fg(state.theme.warning)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw("?"),
@@ -2700,7 +2701,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     format!("{} selected findings", selected_count),
                     Style::default()
-                        .fg(Color::Cyan)
+                        .fg(state.theme.accent)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
@@ -2709,19 +2710,19 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                 Span::styled(
                     format_size(selected_size_bytes),
                     Style::default()
-                        .fg(Color::Green)
+                        .fg(state.theme.success)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw("."),
             ]),
             Line::from(vec![
-                Span::styled("Fun Fact: ", Style::default().fg(Color::Yellow)),
+                Span::styled("Fun Fact: ", Style::default().fg(state.theme.warning)),
                 Span::styled(
                     format!(
                         "This reclaimed space is {}",
                         get_fun_analogy(selected_size_bytes)
                     ),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(state.theme.ink),
                 ),
             ]),
             Line::from(""),
@@ -2741,7 +2742,7 @@ fn draw_dashboard(state: &mut TuiState, frame: &mut Frame) {
                     .title(" Confirmation Required ")
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded)
-                    .border_style(Style::default().fg(Color::Red)),
+                    .border_style(Style::default().fg(state.theme.error)),
             )
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true });
@@ -2769,8 +2770,8 @@ fn render_confirm_bar(
             },
             if yes_active {
                 Style::default()
-                    .bg(theme.primary)
-                    .fg(Color::White)
+                    .bg(theme.select_bg)
+                    .fg(theme.select_fg)
                     .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::DarkGray)
@@ -2885,67 +2886,69 @@ fn get_cpu_model() -> String {
 }
 
 fn draw_cpu_bar_graph(pct: f64, theme: &NibbleTheme) -> Line<'static> {
-    let bar_filled = (pct / 5.0).round().min(20.0) as usize;
-    let bar_empty = 20 - bar_filled;
-    let bar_str = format!("{}{}", "█".repeat(bar_filled), "░".repeat(bar_empty));
-    Line::from(vec![
-        Span::styled("  CPU Load:   ", Style::default().fg(Color::DarkGray)),
-        Span::styled(bar_str, Style::default().fg(theme.primary)),
-        Span::styled(
-            format!(" {:.1}%", pct),
-            Style::default()
-                .fg(Color::White)
-                .add_modifier(Modifier::BOLD),
-        ),
-    ])
+    let mut spans = vec![Span::styled(
+        "  CPU Load:   ",
+        Style::default().fg(Color::DarkGray),
+    )];
+    spans.extend(draw_smooth_bar_spans(
+        pct,
+        20,
+        theme.primary,
+        Color::DarkGray,
+    ));
+    spans.push(Span::styled(
+        format!(" {:.1}%", pct),
+        Style::default().fg(theme.ink).add_modifier(Modifier::BOLD),
+    ));
+    Line::from(spans)
 }
 
-fn draw_bar_graph(label: &str, used: u64, total: u64, color: Color) -> Line<'static> {
+fn draw_bar_graph(
+    theme: &NibbleTheme,
+    label: &str,
+    used: u64,
+    total: u64,
+    color: Color,
+) -> Line<'static> {
     let pct = if total > 0 {
         (used as f64 / total as f64) * 100.0
     } else {
         0.0
     };
-    let bar_filled = (pct / 5.0).round().min(20.0) as usize;
-    let bar_empty = 20 - bar_filled;
-    let bar_str = format!("{}{}", "█".repeat(bar_filled), "░".repeat(bar_empty));
-    Line::from(vec![
-        Span::styled(
-            format!("  {:<12}", label),
-            Style::default().fg(Color::DarkGray),
-        ),
-        Span::styled(bar_str, Style::default().fg(color)),
-        Span::styled(
-            format!(" {:.1}% ", pct),
-            Style::default()
-                .fg(Color::White)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(
-            format!("({}/{})", format_size(used), format_size(total)),
-            Style::default().fg(Color::DarkGray),
-        ),
-    ])
+    let mut spans = vec![Span::styled(
+        format!("  {:<12}", label),
+        Style::default().fg(Color::DarkGray),
+    )];
+    spans.extend(draw_smooth_bar_spans(pct, 20, color, Color::DarkGray));
+    spans.push(Span::styled(
+        format!(" {:.1}% ", pct),
+        Style::default().fg(theme.ink).add_modifier(Modifier::BOLD),
+    ));
+    spans.push(Span::styled(
+        format!("({}/{})", format_size(used), format_size(total)),
+        Style::default().fg(Color::DarkGray),
+    ));
+    Line::from(spans)
 }
 
-fn draw_net_bar_graph(label: &str, rate_kb: f64, max_kb: f64, color: Color) -> Line<'static> {
+fn draw_net_bar_graph(
+    theme: &NibbleTheme,
+    label: &str,
+    rate_kb: f64,
+    max_kb: f64,
+    color: Color,
+) -> Line<'static> {
     let pct = (rate_kb / max_kb * 100.0).clamp(0.0, 100.0);
-    let bar_filled = (pct / 5.0).round().min(20.0) as usize;
-    let bar_empty = 20 - bar_filled;
-    let bar_str = format!("{}{}", "█".repeat(bar_filled), "░".repeat(bar_empty));
-    Line::from(vec![
-        Span::styled(
-            format!("  {:<12}", label),
-            Style::default().fg(Color::DarkGray),
-        ),
-        Span::styled(bar_str, Style::default().fg(color)),
-        Span::styled(
-            format!(" {:.1} KB/s", rate_kb),
-            Style::default()
-                .fg(Color::White)
-                .add_modifier(Modifier::BOLD),
-        ),
-    ])
+    let mut spans = vec![Span::styled(
+        format!("  {:<12}", label),
+        Style::default().fg(Color::DarkGray),
+    )];
+    spans.extend(draw_smooth_bar_spans(pct, 20, color, Color::DarkGray));
+    spans.push(Span::styled(
+        format!(" {:.1} KB/s", rate_kb),
+        Style::default().fg(theme.ink).add_modifier(Modifier::BOLD),
+    ));
+    Line::from(spans)
 }
 
 fn draw_optimize(state: &TuiState, frame: &mut Frame) {
@@ -2976,16 +2979,16 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " System Optimizer ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "— Speed up system performance and reclaim storage",
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             ),
         ]),
         Line::from(vec![Span::styled(
-            "Select optimization scripts. Some commands may require sudo rights to run.",
+            "Review safe maintenance guidance. Nibble avoids sudo-only destructive actions here.",
             Style::default().fg(Color::DarkGray),
         )]),
     ];
@@ -3018,24 +3021,28 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
 
     let options = [
         (
-            "Purge RAM PageCache",
-            "Frees kernel pagecache, dentries, and inodes (requires root)",
+            "Flush DNS Cache",
+            "Clear systemd-resolved and local DNS caches to resolve naming issues",
         ),
         (
-            "Vacuum Systemd Journal Logs",
-            "Reduces systemd journal size to 100MB",
+            "Rebuild Font & MIME Caches",
+            "Regenerate local font cache and update MIME type database associations",
+        ),
+        (
+            "Compact SQLite Databases",
+            "Compact browsers and VS Code databases using SQLite VACUUM",
         ),
         (
             "Clean Package Manager Cache",
-            "Cleans APT, DNF, or Pacman package caches",
+            "Clear packages cache for apt, dnf, or pacman to reclaim storage (requires sudo)",
         ),
         (
-            "Remove Rotated Log Archives",
-            "Deletes rotated/archived files in /var/log (*.gz, *.1)",
+            "Remove Orphan Packages",
+            "Prunes unused/orphaned system packages from the package manager (requires root/sudo)",
         ),
         (
             "Sync Disk Write Buffers",
-            "Forces dirty page cache buffers to write to disk safely",
+            "Forces dirty page cache buffers to write to disk safely (sync)",
         ),
     ];
 
@@ -3047,33 +3054,44 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
 
         let style = if is_cursor {
             Style::default()
-                .bg(state.theme.primary)
-                .fg(Color::White)
+                .bg(state.theme.select_bg)
+                .fg(state.theme.select_fg)
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::White)
+            Style::default().fg(state.theme.ink)
         };
 
-        let check_color = if is_selected {
-            Color::Green // Emerald Green
+        let check_style = if is_cursor {
+            Style::default()
+                .fg(state.theme.select_fg)
+                .add_modifier(Modifier::BOLD)
+        } else if is_selected {
+            Style::default()
+                .fg(state.theme.success)
+                .add_modifier(Modifier::BOLD)
         } else {
-            Color::DarkGray
+            Style::default().fg(Color::DarkGray)
+        };
+
+        let desc_style = if is_cursor {
+            Style::default()
+                .bg(state.theme.select_bg)
+                .fg(state.theme.select_fg)
+        } else {
+            Style::default().fg(Color::DarkGray)
         };
 
         list_items.push(ListItem::new(vec![
             Line::from(vec![
-                Span::styled(
-                    checkbox,
-                    Style::default()
-                        .fg(check_color)
-                        .add_modifier(Modifier::BOLD),
-                ),
+                Span::styled(checkbox, check_style),
                 Span::styled(*name, style),
-            ]),
+            ])
+            .style(if is_cursor { style } else { Style::default() }),
             Line::from(vec![
-                Span::styled("    ", Style::default()),
-                Span::styled(*desc, Style::default().fg(Color::DarkGray)),
-            ]),
+                Span::styled("    ", if is_cursor { style } else { Style::default() }),
+                Span::styled(*desc, desc_style),
+            ])
+            .style(if is_cursor { style } else { Style::default() }),
             Line::from(""),
         ]));
     }
@@ -3092,7 +3110,7 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
     if state.opt_in_progress {
         log_lines.push(Line::from(Span::styled(
             "Optimization run in progress...",
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(state.theme.warning),
         )));
     } else if state.opt_results.is_empty() {
         log_lines.push(Line::from(""));
@@ -3103,17 +3121,17 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
         log_lines.push(Line::from(""));
         log_lines.push(Line::from(Span::styled(
             "  Use [Space] to select scripts,",
-            Style::default().fg(Color::Gray),
+            Style::default().fg(state.theme.ink),
         )));
         log_lines.push(Line::from(Span::styled(
             "  then press [O] to execute selected items.",
-            Style::default().fg(Color::Gray),
+            Style::default().fg(state.theme.ink),
         )));
     } else {
         log_lines.push(Line::from(Span::styled(
             "Execution completed:",
             Style::default()
-                .fg(Color::Green)
+                .fg(state.theme.success)
                 .add_modifier(Modifier::BOLD),
         )));
         log_lines.push(Line::from(""));
@@ -3121,7 +3139,7 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
             if res.starts_with("  -> Error") {
                 log_lines.push(Line::from(Span::styled(
                     res.clone(),
-                    Style::default().fg(Color::Red),
+                    Style::default().fg(state.theme.error),
                 )));
             } else if res.starts_with("  -> Successfully")
                 || res.starts_with("  -> Done")
@@ -3129,12 +3147,12 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
             {
                 log_lines.push(Line::from(Span::styled(
                     res.clone(),
-                    Style::default().fg(Color::Green),
+                    Style::default().fg(state.theme.success),
                 )));
             } else {
                 log_lines.push(Line::from(Span::styled(
                     res.clone(),
-                    Style::default().fg(Color::White),
+                    Style::default().fg(state.theme.ink),
                 )));
             }
         }
@@ -3152,33 +3170,35 @@ fn draw_optimize(state: &TuiState, frame: &mut Frame) {
     let footer_text = Line::from(vec![
         Span::styled(
             " Esc ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Back to Menu │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Arrows/jk ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Navigate │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Space ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Select/Deselect │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " O ",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(state.theme.warning)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             "Run Selected Optimizations",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(state.theme.warning)
                 .add_modifier(Modifier::BOLD),
         ),
     ]);
@@ -3227,19 +3247,19 @@ fn draw_analyze_integrated(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " Interactive Disk Analyzer ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("— Total Size: {}", format_size(total_size)),
-                Style::default().fg(Color::Green),
+                Style::default().fg(state.theme.success),
             ),
         ]),
         Line::from(vec![
             Span::styled("Current Path: ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 current_path.display().to_string(),
-                Style::default().fg(Color::Cyan),
+                Style::default().fg(state.theme.accent),
             ),
         ]),
     ];
@@ -3289,48 +3309,88 @@ fn draw_analyze_integrated(state: &TuiState, frame: &mut Frame) {
             // Formatted size
             let size_str = format!("{:>10}", format_size(child.size_bytes));
 
-            // Percentage bar
+            // Percentage
             let pct = if parent_size > 0 {
                 (child.size_bytes as f64 / parent_size as f64) * 100.0
             } else {
                 0.0
             };
-            let bar_filled = (pct / 10.0).round().min(10.0) as usize;
-            let bar_empty = 10 - bar_filled;
-            let bar_str = format!("[{}{}]", "█".repeat(bar_filled), "░".repeat(bar_empty));
+            let pct_str = format!("{:>5.1}%", pct);
 
-            // Display name & color
-            let display_name = if child.is_dir {
-                format!("{}/", child.name)
+            // Determine bar fill color based on percentage
+            let bar_color = if is_selected {
+                state.theme.select_fg
+            } else if pct >= 50.0 {
+                state.theme.error
+            } else if pct >= 20.0 {
+                state.theme.warning
+            } else if pct >= 5.0 {
+                state.theme.accent
             } else {
-                child.name.clone()
+                state.theme.success
             };
 
-            let name_style = if child.is_dir {
-                Style::default()
-                    .fg(Color::LightBlue)
-                    .add_modifier(Modifier::BOLD)
+            // Display name & icon
+            let icon = if child.is_dir { "📁" } else { "📄" };
+            let display_name = if child.is_dir {
+                format!(" {}/", child.name)
             } else {
-                Style::default().fg(Color::White)
+                format!(" {}", child.name)
             };
 
             let line_style = if is_selected {
-                Style::default().bg(state.theme.primary)
+                Style::default()
+                    .bg(state.theme.select_bg)
+                    .fg(state.theme.select_fg)
             } else {
                 Style::default()
             };
 
-            list_items.push(ListItem::new(vec![
-                Line::from(vec![
-                    Span::styled(format!(" {} ", size_str), Style::default().fg(Color::Green)),
-                    Span::styled(
-                        format!(" {:<12} ", bar_str),
-                        Style::default().fg(Color::DarkGray),
-                    ),
-                    Span::styled(display_name, name_style.patch(line_style)),
-                ])
-                .style(line_style),
-            ]));
+            let (size_style, pct_style, name_style) = if is_selected {
+                (
+                    Style::default().fg(state.theme.select_fg),
+                    Style::default().fg(state.theme.select_fg),
+                    Style::default()
+                        .fg(state.theme.select_fg)
+                        .add_modifier(Modifier::BOLD),
+                )
+            } else {
+                (
+                    Style::default().fg(state.theme.success),
+                    Style::default().fg(Color::DarkGray),
+                    if child.is_dir {
+                        Style::default()
+                            .fg(state.theme.accent)
+                            .add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(state.theme.ink)
+                    },
+                )
+            };
+
+            let mut spans = vec![Span::styled(format!(" {} ", size_str), size_style)];
+            spans.extend(draw_smooth_bar_spans(
+                pct,
+                12,
+                bar_color,
+                if is_selected {
+                    state.theme.select_fg
+                } else {
+                    Color::DarkGray
+                },
+            ));
+            spans.push(Span::styled(format!(" {}  ", pct_str), pct_style));
+            spans.push(Span::styled(
+                icon,
+                if is_selected {
+                    Style::default().fg(state.theme.select_fg)
+                } else {
+                    Style::default().fg(state.theme.accent)
+                },
+            ));
+            spans.push(Span::styled(display_name, name_style));
+
+            list_items.push(ListItem::new(Line::from(spans).style(line_style)));
         }
     }
 
@@ -3345,37 +3405,43 @@ fn draw_analyze_integrated(state: &TuiState, frame: &mut Frame) {
     let footer_text = Line::from(vec![
         Span::styled(
             " Esc ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Back to Menu │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Arrows/jk ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Navigate │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Enter/l ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Open Folder │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Backspace/u/h ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Up │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " d/x ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             "Move Selected to Trash",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
     ]);
     frame.render_widget(Paragraph::new(footer_text).block(footer_block), chunks[2]);
@@ -3476,12 +3542,12 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 " Live System Status ",
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "— Real-time system telemetry and process explorer",
-                Style::default().fg(Color::Gray),
+                Style::default().fg(state.theme.ink),
             ),
         ]),
         Line::from(vec![Span::styled(
@@ -3505,7 +3571,7 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
             Line::from(""),
             Line::from(Span::styled(
                 "Gathering system specifications. Please wait...",
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(state.theme.warning),
             )),
         ];
         frame.render_widget(
@@ -3545,15 +3611,15 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
     let sys_info_lines = vec![
         Line::from(vec![
             Span::styled("  OS:         ", Style::default().fg(Color::DarkGray)),
-            Span::styled(&stats.os_name, Style::default().fg(Color::White)),
+            Span::styled(&stats.os_name, Style::default().fg(state.theme.ink)),
         ]),
         Line::from(vec![
             Span::styled("  Kernel:     ", Style::default().fg(Color::DarkGray)),
-            Span::styled(&stats.kernel, Style::default().fg(Color::White)),
+            Span::styled(&stats.kernel, Style::default().fg(state.theme.ink)),
         ]),
         Line::from(vec![
             Span::styled("  Uptime:     ", Style::default().fg(Color::DarkGray)),
-            Span::styled(uptime_str, Style::default().fg(Color::Green)),
+            Span::styled(uptime_str, Style::default().fg(state.theme.success)),
         ]),
     ];
     frame.render_widget(
@@ -3574,22 +3640,29 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
             Span::styled(
                 cpu_model_str,
                 Style::default()
-                    .fg(Color::White)
+                    .fg(state.theme.ink)
                     .add_modifier(Modifier::BOLD),
             ),
         ]),
         draw_cpu_bar_graph(stats.cpu_percent, state.theme),
         Line::from(""),
-        draw_bar_graph("RAM", stats.ram_used, stats.ram_total, Color::Green),
+        draw_bar_graph(
+            state.theme,
+            "RAM",
+            stats.ram_used,
+            stats.ram_total,
+            state.theme.success,
+        ),
         Line::from(""),
     ];
 
     if stats.swap_total > 0 {
         tel_lines.push(draw_bar_graph(
+            state.theme,
             "SWAP",
             stats.swap_used,
             stats.swap_total,
-            Color::Yellow,
+            state.theme.warning,
         ));
         tel_lines.push(Line::from(""));
     }
@@ -3597,15 +3670,16 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
     tel_lines.push(Line::from(Span::styled(
         "  Storage Disks:",
         Style::default()
-            .fg(Color::White)
+            .fg(state.theme.ink)
             .add_modifier(Modifier::BOLD),
     )));
     for disk in &stats.disks {
         tel_lines.push(draw_bar_graph(
+            state.theme,
             &disk.target,
             disk.used,
             disk.total,
-            Color::Cyan,
+            state.theme.accent,
         ));
     }
 
@@ -3631,9 +3705,21 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
         .border_style(Style::default().fg(state.theme.primary));
 
     let net_text = vec![
-        draw_net_bar_graph("Download", state.sys_network_in_rate, 5000.0, Color::Green),
+        draw_net_bar_graph(
+            state.theme,
+            "Download",
+            state.sys_network_in_rate,
+            5000.0,
+            state.theme.success,
+        ),
         Line::from(""),
-        draw_net_bar_graph("Upload", state.sys_network_out_rate, 2000.0, Color::Cyan),
+        draw_net_bar_graph(
+            state.theme,
+            "Upload",
+            state.sys_network_out_rate,
+            2000.0,
+            state.theme.accent,
+        ),
     ];
     frame.render_widget(Paragraph::new(net_text).block(net_block), right_splits[0]);
 
@@ -3685,17 +3771,35 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
         let cmd_str = proc.command.to_string();
 
         let line_style = if is_selected {
-            Style::default().bg(state.theme.primary)
+            Style::default()
+                .bg(state.theme.select_bg)
+                .fg(state.theme.select_fg)
         } else {
             Style::default()
         };
 
+        let (pid_style, cpu_style, mem_style, cmd_style) = if is_selected {
+            (
+                Style::default().fg(state.theme.select_fg),
+                Style::default().fg(state.theme.select_fg),
+                Style::default().fg(state.theme.select_fg),
+                Style::default().fg(state.theme.select_fg),
+            )
+        } else {
+            (
+                Style::default().fg(state.theme.accent),
+                Style::default().fg(state.theme.warning),
+                Style::default().fg(state.theme.success),
+                Style::default().fg(state.theme.ink),
+            )
+        };
+
         proc_items.push(ListItem::new(vec![
             Line::from(vec![
-                Span::styled(pid_str, Style::default().fg(Color::Cyan)),
-                Span::styled(cpu_str, Style::default().fg(Color::Yellow)),
-                Span::styled(mem_str, Style::default().fg(Color::Green)),
-                Span::styled(cmd_str, Style::default().fg(Color::White)),
+                Span::styled(pid_str, pid_style),
+                Span::styled(cpu_str, cpu_style),
+                Span::styled(mem_str, mem_style),
+                Span::styled(cmd_str, cmd_style),
             ])
             .style(line_style),
         ]));
@@ -3712,19 +3816,23 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
     let footer_text = Line::from(vec![
         Span::styled(
             " Esc ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Back to Menu │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " Arrows ",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("Scroll Processes │ ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             " k ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             "Kill Selected Process │ ",
@@ -3733,13 +3841,13 @@ fn draw_status_integrated(state: &TuiState, frame: &mut Frame) {
         Span::styled(
             " r ",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(state.theme.warning)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             "Force Refresh Stats",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(state.theme.warning)
                 .add_modifier(Modifier::BOLD),
         ),
     ]);
@@ -3780,7 +3888,7 @@ fn draw_goodbye(state: &TuiState, frame: &mut Frame) {
         Span::styled(
             remaining.to_string(),
             Style::default()
-                .fg(Color::Yellow)
+                .fg(state.theme.accent)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled("...", Style::default().fg(Color::DarkGray)),
@@ -3798,4 +3906,347 @@ fn draw_goodbye(state: &TuiState, frame: &mut Frame) {
     );
 
     frame.render_widget(p, popup);
+}
+
+fn draw_clean_complete(state: &TuiState, frame: &mut Frame) {
+    let area = frame.area();
+    let popup = centered_rect_fixed(54, 18, area);
+    frame.render_widget(Clear, popup);
+
+    let (dest_label, dest_path) = match state.cleaned_mode.as_str() {
+        "Simulated" => ("Simulated", "nothing was touched"),
+        "Permanently Deleted" => ("Deleted", "files were permanently removed"),
+        _ => ("Moved to Trash", "~/.local/share/Trash"),
+    };
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            " Clean Complete ",
+            Style::default()
+                .fg(state.theme.primary)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(
+                format!("{:<22}", dest_label),
+                Style::default().fg(Color::DarkGray),
+            ),
+            Span::styled(
+                format_size(state.cleaned_bytes),
+                Style::default()
+                    .fg(state.theme.success)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(
+                format!("{:<22}", "Files moved"),
+                Style::default().fg(Color::DarkGray),
+            ),
+            Span::styled(
+                format!("{}", state.cleaned_count),
+                Style::default()
+                    .fg(state.theme.ink)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(
+                format!("{:<22}", "Restore from"),
+                Style::default().fg(Color::DarkGray),
+            ),
+            Span::styled(dest_path, Style::default().fg(state.theme.accent)),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled("Protected  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                "tokens, configs, sessions, memories",
+                Style::default().fg(state.theme.ink),
+            ),
+        ]),
+        Line::from(Span::styled(
+            "             untouched by Nibs",
+            Style::default().fg(Color::DarkGray),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Press any key to return to the menu.",
+            Style::default().fg(Color::DarkGray),
+        )),
+    ];
+
+    let p = Paragraph::new(lines).alignment(Alignment::Left).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(state.theme.primary)),
+    );
+    frame.render_widget(p, popup);
+}
+
+fn draw_trash_manager(state: &TuiState, frame: &mut Frame) {
+    let area = frame.area();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(8), // Header + Summary
+            Constraint::Min(5),    // List
+            Constraint::Length(3), // Footer
+        ])
+        .split(area);
+
+    // Header with summary
+    let total_bytes: u64 = state.trash_items.iter().map(|i| i.size_bytes).sum();
+    let header_block = Block::default()
+        .borders(Borders::BOTTOM)
+        .border_style(Style::default().fg(state.theme.primary));
+    let header_inner = header_block.inner(chunks[0]);
+    frame.render_widget(header_block, chunks[0]);
+
+    let summary_lines = if state.trash_items.is_empty() {
+        vec![
+            Line::from(Span::styled(
+                " Trash Manager ",
+                Style::default()
+                    .fg(state.theme.primary)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "  Your trash is empty.",
+                Style::default().fg(state.theme.ink),
+            )),
+        ]
+    } else {
+        vec![
+            Line::from(Span::styled(
+                " Trash Manager ",
+                Style::default()
+                    .fg(state.theme.primary)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    "  Current trash size  ",
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::styled(
+                    format_size(total_bytes),
+                    Style::default()
+                        .fg(state.theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled(
+                    "  Items in trash      ",
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::styled(
+                    format!("{}", state.trash_items.len()),
+                    Style::default()
+                        .fg(state.theme.ink)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+        ]
+    };
+    frame.render_widget(Paragraph::new(summary_lines), header_inner);
+
+    // List
+    let items: Vec<ListItem> = state
+        .trash_items
+        .iter()
+        .enumerate()
+        .map(|(i, item)| {
+            let is_selected = i == state.trash_selected_idx;
+            let style = if is_selected {
+                Style::default()
+                    .bg(state.theme.select_bg)
+                    .fg(state.theme.select_fg)
+            } else {
+                Style::default()
+            };
+
+            let name = item
+                .trash_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "?".to_string());
+            let orig = item
+                .original_path
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|| "unknown origin".to_string());
+            let size = format_size(item.size_bytes);
+
+            let prefix = if is_selected { "● " } else { "  " };
+
+            let (name_style, size_style, orig_style) = if is_selected {
+                (
+                    Style::default()
+                        .fg(state.theme.select_fg)
+                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(state.theme.select_fg),
+                    Style::default().fg(state.theme.select_fg),
+                )
+            } else {
+                (
+                    Style::default()
+                        .fg(state.theme.ink)
+                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(state.theme.warning),
+                    Style::default().fg(Color::DarkGray),
+                )
+            };
+
+            ListItem::new(vec![
+                Line::from(vec![
+                    Span::styled(prefix, Style::default().fg(state.theme.primary)),
+                    Span::styled(name, name_style),
+                    Span::styled(format!("  {}  ", size), size_style),
+                    Span::styled(orig, orig_style),
+                ])
+                .style(style),
+            ])
+        })
+        .collect();
+
+    let list_block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::DarkGray))
+        .title(" Trashed Items ");
+
+    if items.is_empty() {
+        let empty = Paragraph::new(Line::from(Span::styled(
+            "  Your trash is empty. ",
+            Style::default().fg(state.theme.ink),
+        )))
+        .alignment(Alignment::Center)
+        .block(list_block);
+        frame.render_widget(empty, chunks[1]);
+    } else {
+        let list_widget = List::new(items).block(list_block);
+        frame.render_widget(list_widget, chunks[1]);
+    }
+
+    // Footer
+    let footer_block = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(Color::DarkGray));
+    let footer_text = Line::from(vec![
+        Span::styled(
+            " Esc ",
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("Back │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            " ↑/↓ ",
+            Style::default()
+                .fg(state.theme.primary)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("Navigate │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            " r ",
+            Style::default()
+                .fg(state.theme.success)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("Restore │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            " d ",
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("Delete │ ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            " e ",
+            Style::default()
+                .fg(state.theme.error)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("Empty All", Style::default().fg(Color::DarkGray)),
+    ]);
+    frame.render_widget(Paragraph::new(footer_text).block(footer_block), chunks[2]);
+}
+
+fn draw_smooth_bar_spans(
+    pct: f64,
+    width: usize,
+    filled_color: Color,
+    track_color: Color,
+) -> Vec<Span<'static>> {
+    let pct = pct.clamp(0.0, 100.0);
+    let total_ticks = width as f64;
+    let filled_ticks = (pct / 100.0) * total_ticks;
+    let full_blocks = filled_ticks.floor() as usize;
+    let remainder = filled_ticks - (full_blocks as f64);
+
+    let mut spans = Vec::new();
+
+    // Filled portion
+    if full_blocks > 0 {
+        spans.push(Span::styled(
+            "█".repeat(full_blocks),
+            Style::default().fg(filled_color),
+        ));
+    }
+
+    if full_blocks < width {
+        // Fractional block
+        let frac_char = if remainder < 1.0 / 16.0 {
+            '░'
+        } else if remainder < 3.0 / 16.0 {
+            '▏'
+        } else if remainder < 5.0 / 16.0 {
+            '▎'
+        } else if remainder < 7.0 / 16.0 {
+            '▍'
+        } else if remainder < 9.0 / 16.0 {
+            '▌'
+        } else if remainder < 11.0 / 16.0 {
+            '▋'
+        } else if remainder < 13.0 / 16.0 {
+            '▊'
+        } else if remainder < 15.0 / 16.0 {
+            '▉'
+        } else {
+            '█'
+        };
+
+        if frac_char == '█' {
+            spans.push(Span::styled("█", Style::default().fg(filled_color)));
+        } else if frac_char == '░' {
+            spans.push(Span::styled("░", Style::default().fg(track_color)));
+        } else {
+            spans.push(Span::styled(
+                frac_char.to_string(),
+                Style::default().fg(filled_color),
+            ));
+        }
+
+        // Remaining empty track
+        let padded_blocks = width.saturating_sub(full_blocks + 1);
+        if padded_blocks > 0 {
+            spans.push(Span::styled(
+                "░".repeat(padded_blocks),
+                Style::default().fg(track_color),
+            ));
+        }
+    }
+
+    spans
 }

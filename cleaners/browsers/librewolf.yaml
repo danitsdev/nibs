@@ -1,0 +1,55 @@
+id: librewolf
+name: LibreWolf
+category: browser_cache
+platforms: [linux]
+detect:
+  commands: ["librewolf", "librewolf-bin"]
+  desktop_files: ["*librewolf*.desktop"]
+  paths:
+    - "~/.librewolf"
+    - "~/.config/librewolf"
+    - "~/.cache/librewolf"
+    - "~/.var/app/io.gitlab.librewolf-community"
+items:
+  - id: web-cache
+    name: LibreWolf web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/librewolf"
+      - "**/.var/app/io.gitlab.librewolf-community/cache"
+      - "**/.librewolf/*/cache2"
+      - "**/.config/librewolf/librewolf/*/cache2"
+      - "**/.librewolf/*/startupCache"
+      - "**/.config/librewolf/librewolf/*/startupCache"
+    reason: "LibreWolf web cache stores temporary page assets and startup cache files. Cleaning it does not remove saved passwords, cookies, history, bookmarks, extensions, or preferences."
+
+  - id: crash-reports
+    name: LibreWolf crash reports
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.librewolf/Crash Reports"
+      - "**/.librewolf/*/minidumps"
+      - "**/.config/librewolf/librewolf/*/minidumps"
+    reason: "LibreWolf crash reports and minidumps are diagnostic artifacts. Cleaning them does not change browser profile data."
+
+  - id: profile-data
+    name: LibreWolf profile data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.librewolf/*/logins.json"
+      - "**/.librewolf/*/key4.db"
+      - "**/.librewolf/*/cookies.sqlite"
+      - "**/.librewolf/*/places.sqlite"
+      - "**/.librewolf/*/prefs.js"
+      - "**/.config/librewolf/librewolf/*/logins.json"
+      - "**/.config/librewolf/librewolf/*/key4.db"
+      - "**/.config/librewolf/librewolf/*/cookies.sqlite"
+      - "**/.config/librewolf/librewolf/*/places.sqlite"
+      - "**/.config/librewolf/librewolf/*/prefs.js"
+    reason: "LibreWolf profile databases can contain passwords, cookies, history, bookmarks, and preferences. Nibble must not clean these by default."

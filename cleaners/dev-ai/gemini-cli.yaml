@@ -2,26 +2,12 @@ id: gemini-cli
 name: Gemini CLI
 category: dev_ai_agent
 platforms: [linux]
-running: ["gemini"]
+detect:
+  commands: ["gemini"]
+  paths:
+    - "~/.gemini"
+    - "~/.config/gemini"
 items:
-  - id: npx-package-cache
-    name: Gemini CLI npx package cache
-    category: language_cache
-    risk: review
-    safety_class: rebuildable
-    default_action: review
-    block_if_running: true
-    paths:
-      - "**/.npm/_npx"
-    reason: "Gemini CLI is commonly launched through npm or npx. This cache can contain downloaded command packages, but Nibble does not yet perform package-aware filtering, so it requires review."
-    kept:
-      - "Gemini CLI auth files"
-      - "settings"
-      - "API keys"
-    restore:
-      - "npx @google/gemini-cli"
-      - "npm install -g @google/gemini-cli"
-
   - id: config-auth
     name: Gemini CLI configuration and auth
     risk: risky
@@ -31,5 +17,3 @@ items:
       - "**/.gemini"
       - "**/.config/gemini"
     reason: "Gemini CLI configuration may contain authentication state, preferences, provider configuration, or API keys. Nibble does not auto-clean it."
-    kept:
-      - "all Gemini CLI credentials and settings"

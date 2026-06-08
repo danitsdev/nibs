@@ -18,6 +18,12 @@ CLAUDE.local.md
 .agents/
 .codex/
 
+# Local secrets and private keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
 # Scratch downloads and temporary reference checkouts
 /scratch/
 *.rpm

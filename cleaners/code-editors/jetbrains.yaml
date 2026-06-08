@@ -1,0 +1,30 @@
+id: jetbrains
+name: JetBrains IDEs
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["idea", "idea.sh", "pycharm", "webstorm", "goland", "clion", "datagrip", "phpstorm", "rubymine", "rider"]
+  desktop_files: ["*jetbrains*.desktop", "*pycharm*.desktop", "*webstorm*.desktop", "*intellij*.desktop", "*goland*.desktop", "*clion*.desktop"]
+  paths:
+    - "~/.cache/JetBrains"
+    - "~/.config/JetBrains"
+    - "~/.local/share/JetBrains"
+items:
+  - id: caches
+    name: JetBrains IDE caches
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.cache/JetBrains/*"
+    reason: "JetBrains IDE caches include indexes, local symbol caches, generated metadata, and plugin cache data. They are rebuildable, but the next IDE startup may be slow, so review before cleaning."
+
+  - id: logs
+    name: JetBrains IDE logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.local/share/JetBrains/*/log"
+      - "**/.cache/JetBrains/*/log"
+    reason: "JetBrains IDE logs are diagnostic output. Cleaning them does not remove projects, settings, plugins, or source code."

@@ -1,0 +1,29 @@
+id: sublime-text
+name: Sublime Text
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["subl", "sublime_text"]
+  desktop_files: ["*sublime*.desktop"]
+  paths:
+    - "~/.config/sublime-text"
+    - "~/.cache/sublime-text"
+items:
+  - id: cache
+    name: Sublime Text cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.cache/sublime-text"
+      - "**/.config/sublime-text/Cache"
+    reason: "Sublime Text cache stores temporary package and UI cache data. Cleaning it does not remove settings, packages, projects, or source code."
+
+  - id: index
+    name: Sublime Text index cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.config/sublime-text/Index"
+    reason: "Sublime Text index data is rebuildable, but cleaning it can make the next project search/indexing pass slower."

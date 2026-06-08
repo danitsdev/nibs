@@ -17,13 +17,6 @@ pub struct Rule {
     pub cleaner_id: Option<String>,
     pub cleaner_name: Option<String>,
     pub safety_class: Option<SafetyClass>,
-    pub kept: Option<Vec<String>>,
-    #[serde(default)]
-    pub block_if_running: bool,
-    #[serde(default)]
-    pub process_names: Vec<String>,
-    #[serde(default)]
-    pub running_processes: Vec<String>,
 }
 
 pub use loader::load_all_rules;

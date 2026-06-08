@@ -1,13 +1,13 @@
 use crate::analyze::run_analyze_tui;
 use crate::cleaner::clean_findings;
-use crate::cli::{Cli, CliAction, ScanConfig};
+use crate::cli::{Cli, CliAction, ScanConfig, ScanProfile};
 use crate::report::generate_json_report;
 use crate::rules::load_all_rules;
 use crate::safety::ScanScope;
 use crate::scanner::{ScanOptions, scan_directory};
 use crate::status::run_status_tui;
 use crate::tui::view::format_size;
-use crate::tui::{run_tui_home, run_tui_scanning};
+use crate::tui::{run_tui_home, run_tui_scanning, run_tui_trash_manager};
 use crate::uninstall::run_uninstall;
 use anyhow::{Context, Result};
 
@@ -29,6 +29,7 @@ pub fn run_app() -> Result<()> {
         CliAction::Uninstall { app_name, dry_run } => run_uninstall(&app_name, dry_run),
         CliAction::Home => run_tui_home(),
         CliAction::Doctor => run_doctor_cli(),
+        CliAction::Trash => run_tui_trash_manager(),
     }
 }
 
@@ -62,6 +63,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
         min_age_days: config.min_age,
         min_size_bytes: config.min_size.saturating_mul(1024 * 1024),
         brute: config.brute,
+        include_deep_rules: config.profile == ScanProfile::Deep,
         ..Default::default()
     };
 
@@ -71,7 +73,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
 
     // Handle Plain Text / JSON output with a synchronous scan.
     if config.json || config.no_tui {
-        let rules = load_all_rules();
+        let rules = load_all_rules(options.include_deep_rules);
         let (findings, warnings) = scan_directory(&target_path, &rules, &options);
 
         if config.json {
@@ -83,6 +85,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
         println!("Nibble — Terminal Cleaner for Developers");
         println!("Target path : {:?}", target_path);
         println!("Scan scope  : {:?}", scope);
+        println!("Profile     : {}", config.profile.label());
         println!("--------------------------------------------------");
 
         if findings.is_empty() {
@@ -126,8 +129,14 @@ fn run_scan(config: ScanConfig) -> Result<()> {
             }
         }
 
-        // Handle dry-run simulated cleaner execution
-        if config.dry_run {
+        // Handle dry-run simulated cleaner execution. Deep Clean is discovery-first:
+        // it surfaces review-heavy findings but does not auto-select them.
+        if config.profile == ScanProfile::Deep {
+            println!(
+                "\nDeep Clean is review-first. No findings are cleaned automatically from CLI output."
+            );
+            println!("Open the TUI or rerun Smart Clean for automatic safe-cache selection.");
+        } else if config.dry_run {
             let recommended: Vec<_> = findings
                 .iter()
                 .filter(|finding| finding.is_recommended_clean())
@@ -138,7 +147,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
                 return Ok(());
             }
             println!("\n--- Dry-Run Cleanup (Simulation) ---");
-            let clean_results = clean_findings(&recommended, true, false)?;
+            let clean_results = clean_findings(&recommended, true, false, config.shred)?;
             for result in &clean_results {
                 println!("  {}", result.message);
             }
@@ -159,27 +168,47 @@ fn run_scan(config: ScanConfig) -> Result<()> {
                 return Ok(());
             }
             let total_bytes: u64 = recommended.iter().map(|f| f.size_bytes).sum();
-            print!(
-                "\nThis will move {} recommended safe items ({}) to the system trash. Proceed? [y/N]: ",
-                recommended.len(),
-                format_size(total_bytes)
-            );
+            let action_prompt = if config.shred {
+                format!(
+                    "\nThis will securely shred {} recommended safe items ({}). Proceed? [y/N]: ",
+                    recommended.len(),
+                    format_size(total_bytes)
+                )
+            } else {
+                format!(
+                    "\nThis will move {} recommended safe items ({}) to the system trash. Proceed? [y/N]: ",
+                    recommended.len(),
+                    format_size(total_bytes)
+                )
+            };
+            print!("{}", action_prompt);
             use std::io::Write;
             let _ = std::io::stdout().flush();
             let mut input = String::new();
             if std::io::stdin().read_line(&mut input).is_ok() {
                 if input.trim().eq_ignore_ascii_case("y") {
-                    println!("\n--- Cleaning to System Trash ---");
-                    let clean_results = clean_findings(&recommended, false, false)?;
+                    if config.shred {
+                        println!("\n--- Shredding Files Securely ---");
+                    } else {
+                        println!("\n--- Cleaning to System Trash ---");
+                    }
+                    let clean_results = clean_findings(&recommended, false, false, config.shred)?;
                     for result in &clean_results {
                         println!("  {}", result.message);
                     }
                     let total_freed: u64 = clean_results.iter().map(|r| r.bytes_freed).sum();
                     println!("--------------------------------------------------");
-                    println!(
-                        "Cleanup completed. Moved {} to trash.",
-                        format_size(total_freed)
-                    );
+                    if config.shred {
+                        println!(
+                            "Cleanup completed. Securely shredded {}.",
+                            format_size(total_freed)
+                        );
+                    } else {
+                        println!(
+                            "Cleanup completed. Moved {} to trash.",
+                            format_size(total_freed)
+                        );
+                    }
                 } else {
                     println!("Cleanup aborted by user.");
                 }
@@ -189,7 +218,7 @@ fn run_scan(config: ScanConfig) -> Result<()> {
         return Ok(());
     }
 
-    run_tui_scanning(target_path, scope, options, config.dry_run)?;
+    run_tui_scanning(target_path, scope, options, config.dry_run, config.profile)?;
 
     Ok(())
 }

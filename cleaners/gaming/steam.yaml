@@ -1,0 +1,59 @@
+id: steam
+name: Steam
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["steam"]
+  desktop_files: ["*steam*.desktop"]
+  paths:
+    - "~/.steam"
+    - "~/.local/share/Steam"
+    - "~/.var/app/com.valvesoftware.Steam"
+items:
+  - id: web-cache
+    name: Steam web cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.steam/config/htmlcache"
+      - "**/.steam/appcache/httpcache"
+      - "**/.steam/appcache/httpscache"
+      - "**/.local/share/Steam/config/htmlcache"
+      - "**/.local/share/Steam/appcache/httpcache"
+      - "**/.local/share/Steam/appcache/httpscache"
+      - "**/.var/app/com.valvesoftware.Steam/.steam/steam/config/htmlcache"
+    reason: "Steam web cache stores temporary store and client web assets. Cleaning it does not remove games, saves, account data, or library metadata."
+
+  - id: shader-cache
+    name: Steam shader pre-cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.local/share/Steam/steamapps/shadercache"
+      - "**/.steam/steam/steamapps/shadercache"
+      - "**/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/shadercache"
+    reason: "Steam shader pre-cache stores compiled Vulkan/OpenGL shaders. Cleaning it does not remove games or saves, but games may compile shaders again and stutter on first launch."
+
+  - id: proton-prefixes
+    name: Steam Proton prefixes
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.local/share/Steam/steamapps/compatdata"
+      - "**/.steam/steam/steamapps/compatdata"
+      - "**/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata"
+    reason: "Steam Proton prefixes store Wine/Proton compatibility data for Windows games. Steam can recreate them, but they may contain per-game configuration and save data, so Nibble keeps them review-only."
+
+  - id: logs
+    name: Steam logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.steam/logs"
+      - "**/.local/share/Steam/logs"
+      - "**/.var/app/com.valvesoftware.Steam/.local/share/Steam/logs"
+    reason: "Steam logs are diagnostic output. Cleaning them does not remove games, saves, account data, or settings."

@@ -1,0 +1,73 @@
+id: vscode-family
+name: VS Code and forks
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["code", "codium", "cursor", "windsurf", "devin-desktop", "devin-desktop-next"]
+  desktop_files: ["*code*.desktop", "*codium*.desktop", "*cursor*.desktop", "*windsurf*.desktop", "*devin*.desktop"]
+  paths:
+    - "~/.config/Code"
+    - "~/.config/Code - Insiders"
+    - "~/.config/VSCodium"
+    - "~/.config/Cursor"
+    - "~/.config/Windsurf"
+    - "~/.config/Windsurf - Next"
+    - "~/.config/Devin"
+    - "~/.config/Devin - Next"
+items:
+  - id: app-cache
+    name: VS Code-family app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/Code/Cache"
+      - "**/.config/Code/Code Cache"
+      - "**/.config/Code/CachedData"
+      - "**/.config/Code/CachedExtensionVSIXs"
+      - "**/.config/Code/CachedProfilesData"
+      - "**/.config/Code/GPUCache"
+      - "**/.config/Code - Insiders/Cache"
+      - "**/.config/Code - Insiders/Code Cache"
+      - "**/.config/Code - Insiders/CachedData"
+      - "**/.config/VSCodium/Cache"
+      - "**/.config/VSCodium/Code Cache"
+      - "**/.config/VSCodium/CachedData"
+      - "**/.config/Cursor/Cache"
+      - "**/.config/Cursor/Code Cache"
+      - "**/.config/Cursor/CachedData"
+      - "**/.config/Windsurf/Cache"
+      - "**/.config/Windsurf/Code Cache"
+      - "**/.config/Windsurf/CachedData"
+      - "**/.config/Devin/Cache"
+      - "**/.config/Devin/Code Cache"
+      - "**/.config/Devin/CachedData"
+    reason: "VS Code-family cache stores temporary Electron UI assets, compiled code cache, cached extension packages, and GPU cache. Cleaning it does not remove settings, projects, extensions, or source code."
+
+  - id: logs
+    name: VS Code-family logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/Code/logs"
+      - "**/.config/Code - Insiders/logs"
+      - "**/.config/VSCodium/logs"
+      - "**/.config/Cursor/logs"
+      - "**/.config/Windsurf/logs"
+      - "**/.config/Devin/logs"
+    reason: "VS Code-family logs are diagnostic output. Cleaning them does not remove settings, extensions, projects, or source code."
+
+  - id: edit-history
+    name: VS Code-family local edit history
+    risk: review
+    safety_class: user_data
+    default_action: review
+    paths:
+      - "**/.config/Code/User/History"
+      - "**/.config/Code - Insiders/User/History"
+      - "**/.config/VSCodium/User/History"
+      - "**/.config/Cursor/User/History"
+      - "**/.config/Windsurf/User/History"
+      - "**/.config/Devin/User/History"
+    reason: "Editor local history can contain previous versions of source files and notes. Review it before cleaning."

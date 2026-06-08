@@ -1,0 +1,39 @@
+id: gimp
+name: GIMP
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["gimp", "gimp-2.10", "gimp-3.0"]
+  desktop_files: ["*gimp*.desktop"]
+  paths:
+    - "~/.config/GIMP"
+    - "~/.cache/gimp"
+    - "~/.var/app/org.gimp.GIMP"
+items:
+  - id: temp-cache
+    name: GIMP temporary cache
+    risk: review
+    safety_class: rebuildable
+    default_action: review
+    paths:
+      - "**/.config/GIMP/*/tmp"
+      - "**/.cache/gimp"
+      - "**/.var/app/org.gimp.GIMP/config/GIMP/*/tmp"
+      - "**/.var/app/org.gimp.GIMP/cache/gimp"
+    reason: "GIMP temporary cache can contain swap, previews, and temporary working data. It is rebuildable, but cleaning while unsaved work exists could be disruptive, so it stays review-only."
+
+  - id: resources
+    name: GIMP profile resources
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/.config/GIMP/*/brushes"
+      - "**/.config/GIMP/*/palettes"
+      - "**/.config/GIMP/*/plug-ins"
+      - "**/.config/GIMP/*/scripts"
+      - "**/.var/app/org.gimp.GIMP/config/GIMP/*/brushes"
+      - "**/.var/app/org.gimp.GIMP/config/GIMP/*/palettes"
+      - "**/.var/app/org.gimp.GIMP/config/GIMP/*/plug-ins"
+      - "**/.var/app/org.gimp.GIMP/config/GIMP/*/scripts"
+    reason: "GIMP profile resources may contain user-created brushes, scripts, plug-ins, and palettes. Nibble must not clean them by default."

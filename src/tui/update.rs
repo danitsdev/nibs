@@ -1,12 +1,8 @@
 use crate::cleaner::clean_findings;
-use crate::cleaner::trash::empty_trash_directory;
+use crate::cleaner::trash::{empty_trash_directory, list_trash_items, restore_trash_item};
 use crate::tui::model::{TuiScreen, TuiState};
 use crate::tui::view::format_size;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crossterm::execute;
-use crossterm::terminal::{
-    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
-};
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::path::PathBuf;
 
@@ -29,22 +25,16 @@ pub fn handle_key_event(
         TuiScreen::HomeConfirmTrash => {
             handle_home_trash_confirm_keys(state, key_event);
         }
-        TuiScreen::PathInput { is_analyze } => {
-            handle_path_input_keys(state, key_event, is_analyze, terminal);
-        }
         TuiScreen::AppUninstallSelector => {
             handle_uninstall_selector_keys(state, key_event, terminal);
         }
         TuiScreen::AppUninstallList => {
             handle_uninstall_list_keys(state, key_event);
         }
-        TuiScreen::DoctorReport => {
-            handle_doctor_keys(state, key_event);
-        }
         TuiScreen::Wizard => {
             handle_wizard_keys(state, key_event);
         }
-        TuiScreen::Dashboard => {
+        TuiScreen::Dashboard | TuiScreen::SmartClean => {
             handle_dashboard_keys(state, key_event);
         }
         TuiScreen::Scanning => {
@@ -64,6 +54,12 @@ pub fn handle_key_event(
         }
         TuiScreen::Goodbye => {
             state.should_quit = true;
+        }
+        TuiScreen::CleanComplete => {
+            handle_clean_complete_keys(state, key_event);
+        }
+        TuiScreen::TrashManager => {
+            handle_trash_manager_keys(state, key_event);
         }
     }
 }
@@ -92,20 +88,29 @@ fn handle_home_keys(
         KeyCode::Enter => {
             match state.home_selected_idx {
                 0 => {
-                    // Clean
-                    state.input_buffer = ".".to_string();
-                    state.screen = TuiScreen::PathInput { is_analyze: false };
-                    state.status_message = "Enter path to scan for developer junk".to_string();
+                    // Smart Clean — scan home directly
+                    state.is_smart_clean = true;
+                    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                    state.target_path = std::path::PathBuf::from(&home);
+                    state.scope = crate::safety::ScanScope::from_path(&state.target_path);
+                    let options = crate::scanner::ScanOptions::default();
+                    crate::tui::start_background_scan(state, state.target_path.clone(), options);
                 }
                 1 => {
-                    // Optimize
-                    state.screen = TuiScreen::Optimize;
-                    state.opt_selected_indices.clear();
-                    state.opt_cursor_idx = 0;
-                    state.opt_in_progress = false;
-                    state.opt_results.clear();
-                    state.status_message =
-                        "Space: toggle option │ O: run optimization │ Esc: back".to_string();
+                    // Deep Clean — scan home with brute mode for broader detection
+                    state.is_smart_clean = false;
+                    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                    state.target_path = std::path::PathBuf::from(&home);
+                    state.scope = crate::safety::ScanScope::from_path(&state.target_path);
+                    let options = crate::scanner::ScanOptions {
+                        brute: true,
+                        min_age_days: 7,
+                        min_size_bytes: 0,
+                        detect_duplicates: true,
+                        include_deep_rules: true,
+                        ..Default::default()
+                    };
+                    crate::tui::start_background_scan(state, state.target_path.clone(), options);
                 }
                 2 => {
                     // Analyze Disk
@@ -136,21 +141,24 @@ fn handle_home_keys(
                             .to_string();
                 }
                 4 => {
-                    // Status (integrated status telemetry dashboard!)
+                    // Optimize System — startup, logs, package cache and safe performance fixes
+                    state.screen = TuiScreen::Optimize;
+                    state.opt_selected_indices.clear();
+                    state.opt_cursor_idx = 0;
+                    state.opt_in_progress = false;
+                    state.opt_results.clear();
                     state.status_message =
-                        "Gathering system specifications. Please wait...".to_string();
-                    let _ = terminal.draw(|f| crate::tui::view::draw(state, f));
-                    state.update_system_stats();
-                    state.screen = TuiScreen::Status;
-                    state.status_message =
-                        "Arrows/jk: scroll processes │ k: Kill process │ r: Refresh │ Esc: Back"
-                            .to_string();
+                        "Space: toggle option │ O: run optimization │ Esc: back".to_string();
                 }
                 5 => {
-                    state.screen = TuiScreen::HomeConfirmTrash;
-                    state.status_message =
-                        "Confirm emptying the system trash. This deletes trash contents permanently."
-                            .to_string();
+                    // Trash manager — list, restore, empty
+                    state.trash_items = list_trash_items();
+                    state.trash_selected_idx = 0;
+                    state.screen = TuiScreen::TrashManager;
+                    state.status_message = format!(
+                        "Arrows/jk: navigate │ r: Restore │ e: Empty all │ Esc: Back  ({} items in trash)",
+                        state.trash_items.len(),
+                    );
                 }
                 6 => {
                     // Settings/Configuration screen
@@ -196,7 +204,16 @@ fn handle_settings_keys(state: &mut TuiState, key_event: KeyEvent) {
         }
         KeyCode::Char(' ') | KeyCode::Enter => match state.settings_cursor_idx {
             0 => {
-                state.delete_directly = !state.delete_directly;
+                if state.shred {
+                    state.delete_directly = false;
+                    state.shred = false;
+                } else if state.delete_directly {
+                    state.delete_directly = false;
+                    state.shred = true;
+                } else {
+                    state.delete_directly = true;
+                    state.shred = false;
+                }
             }
             1 => {
                 state.theme = state.theme.next();
@@ -273,14 +290,26 @@ fn do_app_clean_remnants(state: &mut TuiState) {
         let mut success_count = 0;
         let total_to_trash = filtered.len();
         for p in filtered {
-            if crate::cleaner::clean_path(&p, state.delete_directly).is_ok() {
+            if crate::cleaner::clean_path(&p, state.delete_directly, state.shred).is_ok() {
                 success_count += 1;
             }
         }
-        state.status_message = format!(
-            "Cleaned {}/{} remnants for application '{}'.",
-            success_count, total_to_trash, app.name
-        );
+        state.status_message = if state.shred {
+            format!(
+                "Securely shredded {}/{} remnants for application '{}'.",
+                success_count, total_to_trash, app.name
+            )
+        } else if state.delete_directly {
+            format!(
+                "Permanently deleted {}/{} remnants for application '{}'.",
+                success_count, total_to_trash, app.name
+            )
+        } else {
+            format!(
+                "Cleaned {}/{} remnants for application '{}'.",
+                success_count, total_to_trash, app.name
+            )
+        };
     }
     state.show_confirmation = false;
     state.screen = TuiScreen::Home;
@@ -290,12 +319,18 @@ fn do_trash_remnants(state: &mut TuiState) {
     let mut success_count = 0;
     for &idx in &state.selected_remnants {
         if let Some((path, _)) = state.app_remnants.get(idx)
-            && crate::cleaner::clean_path(path, state.delete_directly).is_ok()
+            && crate::cleaner::clean_path(path, state.delete_directly, state.shred).is_ok()
         {
             success_count += 1;
         }
     }
-    state.status_message = if state.delete_directly {
+    state.status_message = if state.shred {
+        format!(
+            "Securely shredded {}/{} remnants.",
+            success_count,
+            state.selected_remnants.len()
+        )
+    } else if state.delete_directly {
         format!(
             "Permanently deleted {}/{} remnants.",
             success_count,
@@ -326,21 +361,22 @@ fn do_clean_findings(state: &mut TuiState) {
         }
     }
 
-    match clean_findings(&to_clean, state.dry_run, state.delete_directly) {
+    match clean_findings(&to_clean, state.dry_run, state.delete_directly, state.shred) {
         Ok(results) => {
             let total_bytes: u64 = results.iter().map(|r| r.bytes_freed).sum();
-            state.status_message = format!(
-                "Reclaimed {} from {} items ({})",
-                format_size(total_bytes),
-                results.len(),
-                if state.dry_run {
-                    "Simulated"
-                } else if state.delete_directly {
-                    "Permanently Deleted"
-                } else {
-                    "System Trash"
-                }
-            );
+            let mode = if state.dry_run {
+                "Simulated"
+            } else if state.shred {
+                "Securely Shredded"
+            } else if state.delete_directly {
+                "Permanently Deleted"
+            } else {
+                "System Trash"
+            };
+
+            state.cleaned_bytes = total_bytes;
+            state.cleaned_count = results.len();
+            state.cleaned_mode = mode.to_string();
 
             for idx in indices {
                 state.findings.remove(idx);
@@ -348,6 +384,14 @@ fn do_clean_findings(state: &mut TuiState) {
             state.selected_findings.clear();
             state.selected_idx = 0;
             state.clamp_selected_to_filter();
+
+            state.screen = TuiScreen::CleanComplete;
+            state.status_message = format!(
+                "Reclaimed {} from {} items ({})",
+                format_size(total_bytes),
+                results.len(),
+                mode,
+            );
         }
         Err(e) => {
             state.status_message = format!("Error running cleanup: {}", e);
@@ -378,79 +422,101 @@ fn handle_home_trash_confirm_keys(state: &mut TuiState, key_event: KeyEvent) {
     }
 }
 
-fn handle_path_input_keys(
-    state: &mut TuiState,
-    key_event: KeyEvent,
-    is_analyze: bool,
-    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
-) {
+fn handle_clean_complete_keys(state: &mut TuiState, _key_event: KeyEvent) {
+    // Any key returns to Home
+    state.screen = TuiScreen::Home;
+    state.status_message = format!(
+        "Cleaned {} items, {} reclaimed ({}). Back to menu.",
+        state.cleaned_count,
+        format_size(state.cleaned_bytes),
+        state.cleaned_mode,
+    );
+}
+
+fn handle_trash_manager_keys(state: &mut TuiState, key_event: KeyEvent) {
     match key_event.code {
-        KeyCode::Char(c) => {
-            state.input_buffer.push(c);
+        KeyCode::Up | KeyCode::Char('k') => {
+            if !state.trash_items.is_empty() {
+                state.trash_selected_idx = state.trash_selected_idx.saturating_sub(1);
+            }
         }
-        KeyCode::Backspace => {
-            state.input_buffer.pop();
+        KeyCode::Down | KeyCode::Char('j') => {
+            let max = state.trash_items.len().saturating_sub(1);
+            if state.trash_selected_idx < max {
+                state.trash_selected_idx += 1;
+            }
+        }
+        KeyCode::Char('r') | KeyCode::Char('R') => {
+            // Restore selected item
+            if let Some(item) = state.trash_items.get(state.trash_selected_idx) {
+                match restore_trash_item(item) {
+                    Ok(()) => {
+                        let name = item
+                            .original_path
+                            .as_ref()
+                            .and_then(|p| p.file_name())
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "unknown".to_string());
+                        state.status_message = format!("Restored '{}' to original location.", name);
+                        state.trash_items.remove(state.trash_selected_idx);
+                        if state.trash_selected_idx >= state.trash_items.len()
+                            && !state.trash_items.is_empty()
+                        {
+                            state.trash_selected_idx = state.trash_items.len() - 1;
+                        }
+                    }
+                    Err(e) => {
+                        state.status_message = format!("Failed to restore item: {}", e);
+                    }
+                }
+            }
+        }
+        KeyCode::Char('d') | KeyCode::Char('D') => {
+            // Delete selected item permanently from trash
+            if let Some(item) = state.trash_items.get(state.trash_selected_idx) {
+                match crate::cleaner::trash::delete_trash_item(item) {
+                    Ok(()) => {
+                        let name = item
+                            .trash_path
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "unknown".to_string());
+                        state.status_message =
+                            format!("Permanently deleted '{}' from trash.", name);
+                        state.trash_items.remove(state.trash_selected_idx);
+                        if state.trash_selected_idx >= state.trash_items.len()
+                            && !state.trash_items.is_empty()
+                        {
+                            state.trash_selected_idx = state.trash_items.len() - 1;
+                        }
+                    }
+                    Err(e) => {
+                        state.status_message = format!("Failed to delete trash item: {}", e);
+                    }
+                }
+            }
+        }
+        KeyCode::Char('e') | KeyCode::Char('E') => {
+            // Empty all trash
+            let Some(home) = std::env::var("HOME").ok().map(PathBuf::from) else {
+                state.status_message = "Could not determine home directory.".to_string();
+                return;
+            };
+            let trash_root = home.join(".local/share/Trash");
+            match empty_trash_directory(&trash_root) {
+                Ok(()) => {
+                    state.status_message = "Trash emptied permanently.".to_string();
+                    state.trash_items.clear();
+                    state.trash_selected_idx = 0;
+                }
+                Err(e) => {
+                    state.status_message = format!("Failed to empty trash: {}", e);
+                }
+            }
         }
         KeyCode::Esc => {
             state.screen = TuiScreen::Home;
-            state.status_message = String::new();
-        }
-        KeyCode::Enter => {
-            let path_str = state.input_buffer.trim();
-            let path = if path_str.is_empty() {
-                PathBuf::from(".")
-            } else {
-                PathBuf::from(path_str)
-            };
-
-            if is_analyze {
-                if path.exists() {
-                    // Suspend TUI, run analyzer, resume TUI
-                    let _ = disable_raw_mode();
-                    let _ = execute!(terminal.backend_mut(), LeaveAlternateScreen);
-                    let _ = terminal.show_cursor();
-
-                    let _ = crate::analyze::run_analyze_tui(&path);
-
-                    let _ = enable_raw_mode();
-                    let _ = execute!(std::io::stdout(), EnterAlternateScreen);
-                    let _ = terminal.clear();
-                    state.screen = TuiScreen::Home;
-                    state.status_message = "Returned from Disk Analyzer.".to_string();
-                } else {
-                    state.status_message = format!("Error: Path does not exist: {:?}", path);
-                }
-            } else {
-                // Initialize Asynchronous background scan
-                state.scan_files_count = 0;
-                state.scan_findings_count = 0;
-                state.scan_total_size = 0;
-                state.scan_current_path = path.clone();
-
-                let (tx, rx) = std::sync::mpsc::channel();
-                state.scan_rx = Some(rx);
-                state.screen = TuiScreen::Scanning;
-                state.status_message = format!("Running background filesystem scan on {:?}", path);
-
-                // Spawn worker thread
-                let target_path = path.clone();
-                std::thread::spawn(move || {
-                    let rules = crate::rules::load_all_rules();
-                    let options = crate::scanner::ScanOptions {
-                        detect_duplicates: false,
-                        min_age_days: 0,
-                        brute: false,
-                        ..Default::default()
-                    };
-
-                    let _ = crate::scanner::scan_directory_with_progress(
-                        &target_path,
-                        &rules,
-                        &options,
-                        Some(&tx),
-                    );
-                });
-            }
+            state.status_message = "Returned to menu.".to_string();
         }
         _ => {}
     }
@@ -635,28 +701,6 @@ fn handle_uninstall_list_keys(state: &mut TuiState, key_event: KeyEvent) {
     }
 }
 
-fn handle_doctor_keys(state: &mut TuiState, key_event: KeyEvent) {
-    match key_event.code {
-        KeyCode::Up | KeyCode::Char('k') => {
-            if state.doctor_selected_idx > 0 {
-                state.doctor_selected_idx -= 1;
-            }
-        }
-        KeyCode::Down | KeyCode::Char('j') => {
-            if !state.doctor_results.is_empty()
-                && state.doctor_selected_idx < state.doctor_results.len() - 1
-            {
-                state.doctor_selected_idx += 1;
-            }
-        }
-        KeyCode::Esc => {
-            state.screen = TuiScreen::Home;
-            state.status_message = String::new();
-        }
-        _ => {}
-    }
-}
-
 fn handle_wizard_keys(state: &mut TuiState, key_event: KeyEvent) {
     match key_event.code {
         KeyCode::Char('q') | KeyCode::Esc => {
@@ -807,11 +851,11 @@ fn handle_optimize_keys(state: &mut TuiState, key_event: KeyEvent) {
             if state.opt_cursor_idx > 0 {
                 state.opt_cursor_idx -= 1;
             } else {
-                state.opt_cursor_idx = 4;
+                state.opt_cursor_idx = 5;
             }
         }
         KeyCode::Down | KeyCode::Char('j') => {
-            if state.opt_cursor_idx < 4 {
+            if state.opt_cursor_idx < 5 {
                 state.opt_cursor_idx += 1;
             } else {
                 state.opt_cursor_idx = 0;
@@ -844,160 +888,201 @@ fn run_optimizations(state: &mut TuiState) {
     state.opt_results.clear();
     state.opt_in_progress = true;
 
-    for &idx in &state.opt_selected_indices {
+    let selected: Vec<usize> = state.opt_selected_indices.iter().copied().collect();
+    for idx in selected {
         match idx {
             0 => {
-                state
-                    .opt_results
-                    .push("Purging RAM PageCache...".to_string());
-                if std::fs::write("/proc/sys/vm/drop_caches", "3").is_ok() {
+                state.opt_results.push("Flushing DNS caches...".to_string());
+                let mut flushed = false;
+                if std::process::Command::new("resolvectl")
+                    .arg("flush-caches")
+                    .output()
+                    .is_ok()
+                {
                     state
                         .opt_results
-                        .push("  -> Successfully purged RAM cache.".to_string());
-                } else {
-                    let output = std::process::Command::new("sudo")
-                        .arg("sysctl")
-                        .arg("-w")
-                        .arg("vm.drop_caches=3")
-                        .output();
-                    match output {
-                        Ok(out) if out.status.success() => {
-                            state
-                                .opt_results
-                                .push("  -> Successfully purged RAM cache (via sudo).".to_string());
-                        }
-                        _ => {
-                            state.opt_results.push("  -> Error: Permission denied. Run Nibble as root/sudo to purge PageCache.".to_string());
-                        }
-                    }
+                        .push("  -> Ran 'resolvectl flush-caches' successfully.".to_string());
+                    flushed = true;
+                } else if std::process::Command::new("systemd-resolve")
+                    .arg("--flush-caches")
+                    .output()
+                    .is_ok()
+                {
+                    state.opt_results.push(
+                        "  -> Ran 'systemd-resolve --flush-caches' successfully.".to_string(),
+                    );
+                    flushed = true;
+                }
+                if !flushed {
+                    state.opt_results.push(
+                        "  -> No systemd resolver commands found or failed to execute.".to_string(),
+                    );
                 }
             }
             1 => {
                 state
                     .opt_results
-                    .push("Vacuuming systemd journal logs to 100MB...".to_string());
-                let output = std::process::Command::new("journalctl")
-                    .arg("--vacuum-size=100M")
-                    .output();
-                match output {
+                    .push("Rebuilding Font & MIME caches...".to_string());
+                state
+                    .opt_results
+                    .push("  Running 'fc-cache -f' for fonts...".to_string());
+                let fc_output = std::process::Command::new("fc-cache").arg("-f").output();
+                match fc_output {
                     Ok(out) if out.status.success() => {
-                        let stdout = String::from_utf8_lossy(&out.stdout);
-                        let last_line = stdout.lines().last().unwrap_or("Vacuum complete.");
-                        state.opt_results.push(format!("  -> {}", last_line.trim()));
+                        state
+                            .opt_results
+                            .push("    -> Font cache rebuilt successfully.".to_string());
                     }
                     _ => {
-                        let output_sudo = std::process::Command::new("sudo")
-                            .arg("journalctl")
-                            .arg("--vacuum-size=100M")
+                        state
+                            .opt_results
+                            .push("    -> fc-cache execution skipped or failed.".to_string());
+                    }
+                }
+
+                if let Some(home) = std::env::var("HOME").ok().map(PathBuf::from) {
+                    let mime_dir = home.join(".local/share/mime");
+                    if mime_dir.exists() {
+                        state.opt_results.push(
+                            "  Running 'update-mime-database' for user MIME associations..."
+                                .to_string(),
+                        );
+                        let mime_output = std::process::Command::new("update-mime-database")
+                            .arg(&mime_dir)
                             .output();
-                        match output_sudo {
+                        match mime_output {
                             Ok(out) if out.status.success() => {
-                                let stdout = String::from_utf8_lossy(&out.stdout);
-                                let last_line = stdout.lines().last().unwrap_or("Vacuum complete.");
-                                state.opt_results.push(format!("  -> {}", last_line.trim()));
-                            }
-                            _ => {
                                 state
                                     .opt_results
-                                    .push("  -> Error running journalctl vacuum.".to_string());
+                                    .push("    -> MIME database updated successfully.".to_string());
+                            }
+                            _ => {
+                                state.opt_results.push(
+                                    "    -> update-mime-database execution skipped or failed."
+                                        .to_string(),
+                                );
                             }
                         }
+                    } else {
+                        state.opt_results.push(
+                            "  -> Skipped MIME rebuild: ~/.local/share/mime does not exist."
+                                .to_string(),
+                        );
                     }
                 }
             }
             2 => {
                 state
                     .opt_results
+                    .push("Vacuuming SQLite databases...".to_string());
+                let (count, freed) = vacuum_sqlite_databases(state);
+                state.opt_results.push(format!(
+                    "  -> Successfully vacuumed {} SQLite databases (freed {}).",
+                    count,
+                    format_size(freed)
+                ));
+            }
+            3 => {
+                state
+                    .opt_results
                     .push("Cleaning package manager cache...".to_string());
-                let mut cleaned = false;
+                let mut found = false;
                 if std::process::Command::new("apt-get")
                     .arg("--version")
                     .output()
                     .is_ok()
                 {
-                    let _ = std::process::Command::new("sudo")
+                    state
+                        .opt_results
+                        .push("Running 'sudo apt-get clean'...".to_string());
+                    let output = std::process::Command::new("sudo")
                         .arg("apt-get")
                         .arg("clean")
                         .output();
-                    state
-                        .opt_results
-                        .push("  -> Executed 'apt-get clean'.".to_string());
-                    cleaned = true;
+                    match output {
+                        Ok(out) if out.status.success() => {
+                            state
+                                .opt_results
+                                .push("  -> Successfully cleaned APT package cache.".to_string());
+                        }
+                        _ => {
+                            state
+                                .opt_results
+                                .push("  -> Failed to run apt-get clean.".to_string());
+                        }
+                    }
+                    found = true;
                 }
                 if std::process::Command::new("dnf")
                     .arg("--version")
                     .output()
                     .is_ok()
                 {
-                    let _ = std::process::Command::new("sudo")
+                    state
+                        .opt_results
+                        .push("Running 'sudo dnf clean all'...".to_string());
+                    let output = std::process::Command::new("sudo")
                         .arg("dnf")
                         .arg("clean")
                         .arg("all")
                         .output();
-                    state
-                        .opt_results
-                        .push("  -> Executed 'dnf clean all'.".to_string());
-                    cleaned = true;
+                    match output {
+                        Ok(out) if out.status.success() => {
+                            state
+                                .opt_results
+                                .push("  -> Successfully cleaned DNF package cache.".to_string());
+                        }
+                        _ => {
+                            state
+                                .opt_results
+                                .push("  -> Failed to run dnf clean.".to_string());
+                        }
+                    }
+                    found = true;
                 }
                 if std::process::Command::new("pacman")
                     .arg("--version")
                     .output()
                     .is_ok()
                 {
-                    let _ = std::process::Command::new("sudo")
+                    state
+                        .opt_results
+                        .push("Running 'sudo pacman -Sc --noconfirm'...".to_string());
+                    let output = std::process::Command::new("sudo")
                         .arg("pacman")
                         .arg("-Sc")
                         .arg("--noconfirm")
                         .output();
-                    state
-                        .opt_results
-                        .push("  -> Executed 'pacman -Sc'.".to_string());
-                    cleaned = true;
-                }
-                if !cleaned {
-                    state
-                        .opt_results
-                        .push("  -> No supported package manager found.".to_string());
-                }
-            }
-            3 => {
-                state
-                    .opt_results
-                    .push("Removing rotated log archives from /var/log...".to_string());
-                let mut count = 0;
-                let mut freed = 0;
-                if let Ok(entries) = std::fs::read_dir("/var/log") {
-                    for entry in entries.flatten() {
-                        let path = entry.path();
-                        if path.is_file() {
-                            let name = path.file_name().unwrap_or_default().to_string_lossy();
-                            if name.ends_with(".gz")
-                                || name.chars().last().unwrap_or(' ').is_numeric()
-                            {
-                                if let Ok(meta) = path.metadata() {
-                                    freed += meta.len();
-                                }
-                                if std::fs::remove_file(&path).is_ok() {
-                                    count += 1;
-                                } else {
-                                    let _ = std::process::Command::new("sudo")
-                                        .arg("rm")
-                                        .arg("-f")
-                                        .arg(&path)
-                                        .output();
-                                    count += 1;
-                                }
-                            }
+                    match output {
+                        Ok(out) if out.status.success() => {
+                            state
+                                .opt_results
+                                .push("  -> Successfully cleaned Pacman cache.".to_string());
+                        }
+                        _ => {
+                            state
+                                .opt_results
+                                .push("  -> Failed to run pacman clean.".to_string());
                         }
                     }
+                    found = true;
                 }
-                state.opt_results.push(format!(
-                    "  -> Successfully removed {} rotated log files (freed {}).",
-                    count,
-                    format_size(freed)
-                ));
+                if !found {
+                    state.opt_results.push(
+                        "  -> No supported package manager found to clean cache.".to_string(),
+                    );
+                }
             }
             4 => {
+                state
+                    .opt_results
+                    .push("Cleaning orphan packages...".to_string());
+                let (count, _) = run_orphan_cleanup(state);
+                state
+                    .opt_results
+                    .push(format!("  -> Removed {} orphaned packages.", count));
+            }
+            5 => {
                 state
                     .opt_results
                     .push("Syncing filesystem disk buffers...".to_string());
@@ -1011,6 +1096,206 @@ fn run_optimizations(state: &mut TuiState) {
     }
     state.opt_in_progress = false;
     state.status_message = "Optimization complete! Esc: back".to_string();
+}
+
+fn vacuum_sqlite_databases(state: &mut TuiState) -> (usize, u64) {
+    let home = match std::env::var("HOME").ok().map(PathBuf::from) {
+        Some(h) => h,
+        None => return (0, 0),
+    };
+
+    let target_dirs = vec![
+        home.join(".mozilla"),
+        home.join(".config/google-chrome"),
+        home.join(".config/chromium"),
+        home.join(".config/BraveSoftware"),
+        home.join(".config/microsoft-edge"),
+        home.join(".config/Code"),
+    ];
+
+    let mut vacuumed_count = 0;
+    let mut total_freed_bytes = 0;
+
+    for dir in target_dirs {
+        if !dir.exists() {
+            continue;
+        }
+
+        let walker = walkdir::WalkDir::new(dir)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file());
+
+        for entry in walker {
+            let path = entry.path();
+            let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+            if ext == "sqlite" || ext == "sqlite3" || ext == "db" || ext == "db3" || ext == "vscdb"
+            {
+                let orig_size = match path.metadata() {
+                    Ok(m) => m.len(),
+                    Err(_) => continue,
+                };
+                if orig_size == 0 {
+                    continue;
+                }
+
+                let output = std::process::Command::new("sqlite3")
+                    .arg(path)
+                    .arg("VACUUM;")
+                    .output();
+
+                if let Ok(out) = output
+                    && out.status.success()
+                {
+                    let new_size = path.metadata().map(|m| m.len()).unwrap_or(orig_size);
+                    if new_size < orig_size {
+                        let freed = orig_size - new_size;
+                        if freed > 0 {
+                            total_freed_bytes += freed;
+                            vacuumed_count += 1;
+                            state.opt_results.push(format!(
+                                "  Vacuumed {:?}: reclaimed {}",
+                                path.file_name().unwrap_or_default(),
+                                format_size(freed)
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    (vacuumed_count, total_freed_bytes)
+}
+
+fn run_orphan_cleanup(state: &mut TuiState) -> (usize, u64) {
+    let mut count = 0;
+    let freed = 0;
+
+    let mut pkg_mgr = "";
+    if std::process::Command::new("apt-get")
+        .arg("--version")
+        .output()
+        .is_ok()
+    {
+        pkg_mgr = "apt";
+    } else if std::process::Command::new("dnf")
+        .arg("--version")
+        .output()
+        .is_ok()
+    {
+        pkg_mgr = "dnf";
+    } else if std::process::Command::new("pacman")
+        .arg("--version")
+        .output()
+        .is_ok()
+    {
+        pkg_mgr = "pacman";
+    }
+
+    state
+        .opt_results
+        .push(format!("Detected package manager: {}", pkg_mgr));
+
+    match pkg_mgr {
+        "apt" => {
+            state
+                .opt_results
+                .push("Running 'sudo apt-get autoremove -y'...".to_string());
+            let output = std::process::Command::new("sudo")
+                .arg("apt-get")
+                .arg("autoremove")
+                .arg("-y")
+                .output();
+            match output {
+                Ok(out) if out.status.success() => {
+                    state
+                        .opt_results
+                        .push("  -> Successfully removed orphaned APT packages.".to_string());
+                    count += 1;
+                }
+                _ => {
+                    state
+                        .opt_results
+                        .push("  -> Failed to run apt-get autoremove.".to_string());
+                }
+            }
+        }
+        "dnf" => {
+            state
+                .opt_results
+                .push("Running 'sudo dnf autoremove -y'...".to_string());
+            let output = std::process::Command::new("sudo")
+                .arg("dnf")
+                .arg("autoremove")
+                .arg("-y")
+                .output();
+            match output {
+                Ok(out) if out.status.success() => {
+                    state
+                        .opt_results
+                        .push("  -> Successfully removed orphaned DNF packages.".to_string());
+                    count += 1;
+                }
+                _ => {
+                    state
+                        .opt_results
+                        .push("  -> Failed to run dnf autoremove.".to_string());
+                }
+            }
+        }
+        "pacman" => {
+            let out_orphans = std::process::Command::new("pacman").arg("-Qtdq").output();
+            if let Ok(out) = out_orphans {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let packages: Vec<&str> = stdout
+                    .lines()
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if packages.is_empty() {
+                    state
+                        .opt_results
+                        .push("  -> No orphaned packages found.".to_string());
+                } else {
+                    state.opt_results.push(format!(
+                        "Running 'sudo pacman -Rns {} --noconfirm'...",
+                        packages.join(" ")
+                    ));
+                    let output = std::process::Command::new("sudo")
+                        .arg("pacman")
+                        .arg("-Rns")
+                        .args(&packages)
+                        .arg("--noconfirm")
+                        .output();
+                    match output {
+                        Ok(out) if out.status.success() => {
+                            state.opt_results.push(
+                                "  -> Successfully removed orphaned Pacman packages.".to_string(),
+                            );
+                            count += packages.len();
+                        }
+                        _ => {
+                            state
+                                .opt_results
+                                .push("  -> Failed to remove packages.".to_string());
+                        }
+                    }
+                }
+            } else {
+                state
+                    .opt_results
+                    .push("  -> Failed to query orphaned packages.".to_string());
+            }
+        }
+        _ => {
+            state
+                .opt_results
+                .push("  -> No supported package manager found to clean orphans.".to_string());
+        }
+    }
+    (count, freed)
 }
 
 fn handle_analyze_keys(state: &mut TuiState, key_event: KeyEvent) {
@@ -1036,14 +1321,18 @@ fn handle_analyze_keys(state: &mut TuiState, key_event: KeyEvent) {
                 let target_idx = children[state.analyze_selected_idx];
                 let target_path = state.analyze_arena[target_idx].path.clone();
 
-                state.status_message = if state.delete_directly {
+                state.status_message = if state.shred {
+                    format!("Securely shredding: {:?}", target_path)
+                } else if state.delete_directly {
                     format!("Permanently deleting: {:?}", target_path)
                 } else {
                     format!("Moving to trash: {:?}", target_path)
                 };
-                match crate::cleaner::clean_path(&target_path, state.delete_directly) {
+                match crate::cleaner::clean_path(&target_path, state.delete_directly, state.shred) {
                     Ok(_) => {
-                        state.status_message = if state.delete_directly {
+                        state.status_message = if state.shred {
+                            format!("Successfully shredded: {}", target_path.display())
+                        } else if state.delete_directly {
                             format!("Successfully deleted: {}", target_path.display())
                         } else {
                             format!("Successfully moved to trash: {}", target_path.display())

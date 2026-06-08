@@ -1,0 +1,32 @@
+id: virtualbox
+name: VirtualBox
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["virtualbox", "VirtualBox", "VBoxManage"]
+  desktop_files: ["*virtualbox*.desktop"]
+  paths:
+    - "~/.VirtualBox"
+    - "~/.config/VirtualBox"
+items:
+  - id: logs
+    name: VirtualBox logs
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.VirtualBox/*.log"
+      - "**/.VirtualBox/*.log.*"
+      - "**/.config/VirtualBox/*.log"
+      - "**/.config/VirtualBox/*.log.*"
+    reason: "VirtualBox logs are diagnostic output. Cleaning them does not remove virtual machines, disk images, snapshots, or VirtualBox settings."
+
+  - id: virtual-machines
+    name: VirtualBox virtual machines
+    risk: risky
+    safety_class: user_data
+    default_action: never
+    paths:
+      - "**/VirtualBox VMs"
+      - "**/.VirtualBox/Machines"
+    reason: "VirtualBox virtual machine folders can contain disk images, snapshots, and user-created machine state. Nibble must not clean them automatically."

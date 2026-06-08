@@ -1,0 +1,35 @@
+id: figma
+name: Figma
+category: desktop_app_cache
+platforms: [linux]
+detect:
+  commands: ["figma-linux", "figma"]
+  desktop_files: ["*figma*.desktop"]
+  paths:
+    - "~/.config/Figma"
+    - "~/.cache/Figma"
+    - "~/.var/app/io.github.Figma_Linux.figma_linux"
+items:
+  - id: app-cache
+    name: Figma app cache
+    risk: safe
+    safety_class: safe
+    default_action: clean
+    paths:
+      - "**/.config/Figma/Cache"
+      - "**/.config/Figma/Code Cache"
+      - "**/.config/Figma/GPUCache"
+      - "**/.cache/Figma"
+      - "**/.var/app/io.github.Figma_Linux.figma_linux/cache"
+    reason: "Figma cache stores temporary UI assets, compiled code cache, thumbnails, and GPU cache. Cleaning it does not remove cloud files, local downloads, settings, or login state."
+
+  - id: identity-data
+    name: Figma identity data
+    risk: risky
+    safety_class: secret_or_auth
+    default_action: never
+    paths:
+      - "**/.config/Figma/Cookies"
+      - "**/.config/Figma/Local Storage"
+      - "**/.config/Figma/Session Storage"
+    reason: "Figma identity storage can contain login state and account-linked data. Nibble must not clean it by default."
